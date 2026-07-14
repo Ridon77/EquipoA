@@ -7,8 +7,10 @@ interface SearchableSelectProps {
   options: string[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  optional?: boolean;
   error?: string;
   inputRef?: RefObject<HTMLInputElement | null>;
+  className?: string;
 }
 
 export function SearchableSelect({
@@ -18,20 +20,26 @@ export function SearchableSelect({
   options,
   onChange,
   disabled = false,
+  optional = false,
   error,
   inputRef,
+  className = '',
 }: SearchableSelectProps) {
   const listId = `${id}-options`;
   const errorId = `${id}-error`;
 
   return (
-    <label htmlFor={id}>
-      {label}
+    <div className={`form-field autocomplete ${className}`.trim()}>
+      <label className="form-label" htmlFor={id}>
+        {label}
+        {optional && <span className="form-label__optional">Opcional</span>}
+      </label>
       <input
         ref={inputRef}
         id={id}
         name={id}
         type="text"
+        className="autocomplete__input form-control"
         list={listId}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -46,10 +54,10 @@ export function SearchableSelect({
         ))}
       </datalist>
       {error && (
-        <span id={errorId} className="field-error" role="alert">
+        <p id={errorId} className="form-error" role="alert">
           {error}
-        </span>
+        </p>
       )}
-    </label>
+    </div>
   );
 }

@@ -111,122 +111,176 @@ export function AdminPage() {
     errors.parameterMapping?.[field];
 
   return (
-    <main>
-      <h1>Administración</h1>
-
-      <p className="admin-warning" role="note">
-        Esta página no dispone todavía de autenticación. Su dirección no debe
-        considerarse un mecanismo de seguridad.
-      </p>
-
-      {successMessage && (
-        <p className="admin-success" role="status" aria-live="polite">
-          {successMessage}
+    <>
+      <header className="admin-header">
+        <h1 className="admin-header__title">Administración</h1>
+        <p className="admin-header__description">
+          Configure los servicios externos y el mapeo de parámetros de envío.
         </p>
-      )}
+      </header>
 
-      <form className="admin-form" onSubmit={handleSave} noValidate>
-        <label htmlFor="countriesApiUrl">
-          URL de la API de países
-          <input
-            id="countriesApiUrl"
-            name="countriesApiUrl"
-            type="url"
-            value={config.countriesApiUrl}
-            onChange={(event) =>
-              handleUrlChange('countriesApiUrl', event.target.value)
-            }
-            aria-invalid={errors.countriesApiUrl ? true : undefined}
-          />
-          {errors.countriesApiUrl && (
-            <span className="field-error" role="alert">
-              {errors.countriesApiUrl}
-            </span>
-          )}
-        </label>
-
-        <label htmlFor="submitApiUrl">
-          URL de la API de envío
-          <input
-            id="submitApiUrl"
-            name="submitApiUrl"
-            type="url"
-            value={config.submitApiUrl}
-            onChange={(event) =>
-              handleUrlChange('submitApiUrl', event.target.value)
-            }
-            aria-invalid={errors.submitApiUrl ? true : undefined}
-          />
-          {errors.submitApiUrl && (
-            <span className="field-error" role="alert">
-              {errors.submitApiUrl}
-            </span>
-          )}
-        </label>
-
-        <label htmlFor="submitTimeoutMs">
-          Timeout (milisegundos)
-          <input
-            id="submitTimeoutMs"
-            name="submitTimeoutMs"
-            type="number"
-            min={1}
-            step={1}
-            value={config.submitTimeoutMs}
-            onChange={(event) => handleTimeoutChange(event.target.value)}
-            aria-invalid={errors.submitTimeoutMs ? true : undefined}
-          />
-          {errors.submitTimeoutMs && (
-            <span className="field-error" role="alert">
-              {errors.submitTimeoutMs}
-            </span>
-          )}
-        </label>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Campo del formulario</th>
-              <th>Nombre del parámetro API</th>
-            </tr>
-          </thead>
-          <tbody>
-            {parameterFieldOrder.map((field) => (
-              <tr key={field}>
-                <td>{parameterFieldLabels[field]}</td>
-                <td>
-                  <label htmlFor={`param-${field}`} className="sr-only">
-                    Parámetro para {parameterFieldLabels[field]}
-                  </label>
-                  <input
-                    id={`param-${field}`}
-                    name={`param-${field}`}
-                    type="text"
-                    value={config.parameterMapping[field]}
-                    onChange={(event) =>
-                      handleParameterChange(field, event.target.value)
-                    }
-                    aria-invalid={getParameterError(field) ? true : undefined}
-                  />
-                  {getParameterError(field) && (
-                    <span className="field-error" role="alert">
-                      {getParameterError(field)}
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="actions">
-          <button type="submit">Guardar configuración</button>
-          <button type="button" onClick={handleRestore}>
-            Restaurar valores predeterminados
-          </button>
-          <Link to="/">Volver al formulario</Link>
+      <section className="surface-card surface-card--admin">
+        <div
+          className="status-panel status-panel--warning"
+          role="note"
+        >
+          Esta página no dispone todavía de autenticación. Su dirección no debe
+          considerarse un mecanismo de seguridad.
         </div>
-      </form>
-    </main>
+
+        {successMessage && (
+          <div className="status-panel status-panel--success" role="status" aria-live="polite">
+            {successMessage}
+          </div>
+        )}
+
+        <form className="form-layout" onSubmit={handleSave} noValidate>
+          <section className="admin-section">
+            <h2 className="admin-section__title">Configuración de servicios</h2>
+            <p className="admin-section__description">
+              Defina las URLs utilizadas para cargar países y enviar solicitudes.
+            </p>
+
+            <div className="form-field">
+              <label className="form-label" htmlFor="countriesApiUrl">
+                URL de la API de países
+              </label>
+              <input
+                id="countriesApiUrl"
+                name="countriesApiUrl"
+                type="url"
+                className="form-control"
+                value={config.countriesApiUrl}
+                onChange={(event) =>
+                  handleUrlChange('countriesApiUrl', event.target.value)
+                }
+                aria-invalid={errors.countriesApiUrl ? true : undefined}
+              />
+              {errors.countriesApiUrl && (
+                <p className="form-error" role="alert">
+                  {errors.countriesApiUrl}
+                </p>
+              )}
+            </div>
+
+            <div className="form-field">
+              <label className="form-label" htmlFor="submitApiUrl">
+                URL de la API de envío
+              </label>
+              <input
+                id="submitApiUrl"
+                name="submitApiUrl"
+                type="url"
+                className="form-control"
+                value={config.submitApiUrl}
+                onChange={(event) =>
+                  handleUrlChange('submitApiUrl', event.target.value)
+                }
+                aria-invalid={errors.submitApiUrl ? true : undefined}
+              />
+              {errors.submitApiUrl && (
+                <p className="form-error" role="alert">
+                  {errors.submitApiUrl}
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section className="admin-section">
+            <h2 className="admin-section__title">Tiempo máximo de espera</h2>
+            <p className="admin-section__description">
+              Tiempo en milisegundos antes de cancelar una petición de envío.
+            </p>
+
+            <div className="form-field">
+              <label className="form-label" htmlFor="submitTimeoutMs">
+                Timeout (milisegundos)
+              </label>
+              <input
+                id="submitTimeoutMs"
+                name="submitTimeoutMs"
+                type="number"
+                min={1}
+                step={1}
+                className="form-control"
+                value={config.submitTimeoutMs}
+                onChange={(event) => handleTimeoutChange(event.target.value)}
+                aria-invalid={errors.submitTimeoutMs ? true : undefined}
+              />
+              {errors.submitTimeoutMs && (
+                <p className="form-error" role="alert">
+                  {errors.submitTimeoutMs}
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section className="admin-section">
+            <h2 className="admin-section__title">Mapeo de parámetros</h2>
+            <p className="admin-section__description">
+              Asocie cada campo del formulario con el nombre del parámetro en la API.
+            </p>
+
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Campo del formulario</th>
+                    <th>Nombre del parámetro API</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parameterFieldOrder.map((field) => (
+                    <tr key={field}>
+                      <td>{parameterFieldLabels[field]}</td>
+                      <td>
+                        <label htmlFor={`param-${field}`} className="sr-only">
+                          Parámetro para {parameterFieldLabels[field]}
+                        </label>
+                        <input
+                          id={`param-${field}`}
+                          name={`param-${field}`}
+                          type="text"
+                          className="form-control"
+                          value={config.parameterMapping[field]}
+                          onChange={(event) =>
+                            handleParameterChange(field, event.target.value)
+                          }
+                          aria-invalid={getParameterError(field) ? true : undefined}
+                        />
+                        {getParameterError(field) && (
+                          <p className="form-error" role="alert">
+                            {getParameterError(field)}
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="admin-section">
+            <h2 className="admin-section__title">Acciones</h2>
+            <div className="actions">
+              <button type="submit" className="button button--primary">
+                Guardar configuración
+              </button>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={handleRestore}
+              >
+                Restaurar valores predeterminados
+              </button>
+              <Link className="button button--ghost" to="/">
+                Volver al formulario
+              </Link>
+            </div>
+          </section>
+        </form>
+      </section>
+    </>
   );
 }

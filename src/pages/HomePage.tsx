@@ -114,11 +114,25 @@ export function HomePage() {
     setViewState('form');
   };
 
-  return (
-    <main>
-      <h1>Solicitud</h1>
+  if (viewState === 'success') {
+    return <SuccessView onNewRequest={handleNewRequest} />;
+  }
 
-      {viewState === 'form' && (
+  if (viewState === 'technicalError') {
+    return <TechnicalErrorView onBackToForm={handleBackToForm} />;
+  }
+
+  return (
+    <>
+      <header className="page-intro">
+        <p className="page-eyebrow">Automatización de procesos</p>
+        <h1 className="page-title">Cuéntanos qué proceso quieres mejorar</h1>
+        <p className="page-subtitle">
+          Completa el formulario y nuestro equipo analizará tu solicitud.
+        </p>
+      </header>
+
+      <section className="surface-card">
         <FormView
           formData={formData}
           errors={errors}
@@ -132,15 +146,7 @@ export function HomePage() {
           isSubmitting={isSubmitting}
           processError={processError}
         />
-      )}
-
-      {viewState === 'success' && (
-        <SuccessView onNewRequest={handleNewRequest} />
-      )}
-
-      {viewState === 'technicalError' && (
-        <TechnicalErrorView onBackToForm={handleBackToForm} />
-      )}
-    </main>
+      </section>
+    </>
   );
 }
