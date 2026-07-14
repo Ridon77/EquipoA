@@ -7,6 +7,7 @@ export type ParameterField = keyof ParameterMapping;
 export const parameterFieldLabels: Record<ParameterField, string> = {
   nombre: 'Nombre',
   email: 'Email',
+  empresa: 'Empresa',
   pais: 'País',
   ciudad: 'Ciudad',
   mensaje: 'Mensaje',
@@ -15,6 +16,7 @@ export const parameterFieldLabels: Record<ParameterField, string> = {
 export const parameterFieldOrder: ParameterField[] = [
   'nombre',
   'email',
+  'empresa',
   'pais',
   'ciudad',
   'mensaje',
@@ -35,6 +37,7 @@ export function trimAdminConfig(config: AppConfig): AppConfig {
     parameterMapping: {
       nombre: config.parameterMapping.nombre.trim(),
       email: config.parameterMapping.email.trim(),
+      empresa: config.parameterMapping.empresa.trim(),
       pais: config.parameterMapping.pais.trim(),
       ciudad: config.parameterMapping.ciudad.trim(),
       mensaje: config.parameterMapping.mensaje.trim(),

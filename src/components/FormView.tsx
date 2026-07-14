@@ -36,6 +36,7 @@ export function FormView({
   const fieldRefs = {
     nombre: useRef<HTMLInputElement>(null),
     email: useRef<HTMLInputElement>(null),
+    empresa: useRef<HTMLInputElement>(null),
     pais: useRef<HTMLInputElement>(null),
     ciudad: useRef<HTMLInputElement>(null),
     mensaje: useRef<HTMLTextAreaElement>(null),
@@ -110,6 +111,18 @@ export function FormView({
             {errors.email}
           </span>
         )}
+      </label>
+
+      <label htmlFor="empresa">
+        Introduzca su empresa
+        <input
+          ref={fieldRefs.empresa}
+          id="empresa"
+          name="empresa"
+          type="text"
+          value={formData.empresa}
+          onChange={(event) => onChange('empresa', event.target.value)}
+        />
       </label>
 
       <SearchableSelect

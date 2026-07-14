@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
 import {
   loadConfig,
+  migrateConfig,
   resetConfig,
   saveConfig,
 } from './configService';
@@ -14,6 +15,7 @@ const customConfig: AppConfig = {
   parameterMapping: {
     nombre: 'name',
     email: 'mail',
+    empresa: 'company',
     pais: 'country',
     ciudad: 'city',
     mensaje: 'request',
@@ -55,5 +57,45 @@ describe('configService', () => {
     localStorage.setItem(CONFIG_STORAGE_KEY, '{ invalid json');
 
     expect(loadConfig()).toEqual(DEFAULT_CONFIG);
+  });
+
+  it('migra configuraciones antiguas sin empresa', () => {
+    const legacyStored = {
+      countriesApiUrl: 'https://legacy.example.com/countries',
+      submitApiUrl: 'https://legacy.example.com/submit',
+      submitTimeoutMs: 8000,
+      parameterMapping: {
+        nombre: 'name',
+        email: 'mail',
+        pais: 'country',
+        ciudad: 'city',
+        mensaje: 'request',
+      },
+    };
+
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(legacyStored));
+
+    expect(loadConfig()).toEqual({
+      ...legacyStored,
+      parameterMapping: {
+        ...legacyStored.parameterMapping,
+        empresa: 'empresa',
+      },
+    });
+  });
+
+  it('conserva empresa personalizada al migrar', () => {
+    const migrated = migrateConfig({
+      parameterMapping: {
+        nombre: 'name',
+        email: 'mail',
+        empresa: 'companyName',
+        pais: 'country',
+        ciudad: 'city',
+        mensaje: 'request',
+      },
+    });
+
+    expect(migrated.parameterMapping.empresa).toBe('companyName');
   });
 });

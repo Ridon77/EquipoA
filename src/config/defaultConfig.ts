@@ -7,6 +7,7 @@ export const defaultConfig: AppConfig = {
   parameterMapping: {
     nombre: 'nombre',
     email: 'email',
+    empresa: 'empresa',
     pais: 'pais',
     ciudad: 'ciudad',
     mensaje: 'mensaje',

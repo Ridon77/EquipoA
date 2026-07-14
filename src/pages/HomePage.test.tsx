@@ -34,15 +34,44 @@ describe('HomePage', () => {
     vi.mocked(submitForm).mockReset();
   });
 
+  it('muestra el campo Empresa con su literal', () => {
+    render(<HomePage />);
+
+    expect(
+      screen.getByLabelText(/Introduzca su empresa/i),
+    ).toBeInTheDocument();
+  });
+
+  it('permite enviar con empresa vacía', async () => {
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+
+    const user = userEvent.setup();
+
+    render(<HomePage />);
+    await fillValidForm(user);
+    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+    expect(
+      await screen.findByText('La solicitud se ha procesado correctamente.'),
+    ).toBeInTheDocument();
+  });
+
   it('conserva valores tras error de validación', async () => {
     const user = userEvent.setup();
 
     render(<HomePage />);
 
     await user.type(screen.getByLabelText(/Introduzca su nombre/i), 'Joan');
+    await user.type(
+      screen.getByLabelText(/Introduzca su empresa/i),
+      'Acme S.L.',
+    );
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
     expect(screen.getByLabelText(/Introduzca su nombre/i)).toHaveValue('Joan');
+    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
+      'Acme S.L.',
+    );
     expect(screen.getByText('La solicitud es obligatoria.')).toBeInTheDocument();
     expect(submitForm).not.toHaveBeenCalled();
   });
@@ -56,6 +85,10 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     render(<HomePage />);
+    await user.type(
+      screen.getByLabelText(/Introduzca su empresa/i),
+      'Acme S.L.',
+    );
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -65,10 +98,9 @@ describe('HomePage', () => {
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText(/Introduzca su nombre/i)).toHaveValue('Joan');
-    expect(
-      screen.getByLabelText(/Introduzca su solicitud/i),
-    ).toHaveValue('Necesito ayuda');
+    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
+      'Acme S.L.',
+    );
   });
 
   it('muestra el mensaje obligatorio en error técnico', async () => {
@@ -91,6 +123,10 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     render(<HomePage />);
+    await user.type(
+      screen.getByLabelText(/Introduzca su empresa/i),
+      'Acme S.L.',
+    );
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -98,10 +134,29 @@ describe('HomePage', () => {
       await screen.findByRole('button', { name: 'Volver al formulario' }),
     );
 
-    expect(screen.getByLabelText(/Introduzca su nombre/i)).toHaveValue('Joan');
-    expect(
-      screen.getByLabelText(/Introduzca su solicitud/i),
-    ).toHaveValue('Necesito ayuda');
+    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
+      'Acme S.L.',
+    );
+  });
+
+  it('limpia empresa tras nueva solicitud', async () => {
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+
+    const user = userEvent.setup();
+
+    render(<HomePage />);
+    await user.type(
+      screen.getByLabelText(/Introduzca su empresa/i),
+      'Acme S.L.',
+    );
+    await fillValidForm(user);
+    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Nueva solicitud' }),
+    );
+
+    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue('');
   });
 
   it('muestra confirmación tras éxito', async () => {

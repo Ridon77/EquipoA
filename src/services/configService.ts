@@ -17,6 +17,17 @@ function isValidConfig(value: unknown): value is AppConfig {
   );
 }
 
+export function migrateConfig(stored: Partial<AppConfig>): AppConfig {
+  return {
+    ...defaultConfig,
+    ...stored,
+    parameterMapping: {
+      ...defaultConfig.parameterMapping,
+      ...(stored.parameterMapping ?? {}),
+    },
+  };
+}
+
 export function loadConfig(): AppConfig {
   try {
     const stored = localStorage.getItem(CONFIG_STORAGE_KEY);
@@ -26,7 +37,7 @@ export function loadConfig(): AppConfig {
 
     const parsed: unknown = JSON.parse(stored);
     if (isValidConfig(parsed)) {
-      return parsed;
+      return migrateConfig(parsed);
     }
   } catch {
     // Fall back to default configuration.

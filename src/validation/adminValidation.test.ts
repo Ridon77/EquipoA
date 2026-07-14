@@ -43,6 +43,7 @@ describe('validateAdminConfig', () => {
       parameterMapping: {
         nombre: 'campo',
         email: 'campo',
+        empresa: 'empresa',
         pais: 'pais',
         ciudad: 'ciudad',
         mensaje: 'mensaje',
@@ -54,6 +55,41 @@ describe('validateAdminConfig', () => {
     );
     expect(errors.parameterMapping?.email).toBe(
       'Los nombres de parámetro no pueden repetirse.',
+    );
+  });
+
+  it('rechaza duplicado entre nombre y empresa', () => {
+    const errors = validateAdminConfig({
+      ...validConfig,
+      parameterMapping: {
+        nombre: 'name',
+        email: 'email',
+        empresa: 'name',
+        pais: 'country',
+        ciudad: 'city',
+        mensaje: 'message',
+      },
+    });
+
+    expect(errors.parameterMapping?.nombre).toBe(
+      'Los nombres de parámetro no pueden repetirse.',
+    );
+    expect(errors.parameterMapping?.empresa).toBe(
+      'Los nombres de parámetro no pueden repetirse.',
+    );
+  });
+
+  it('rechaza parámetro empresa vacío', () => {
+    const errors = validateAdminConfig({
+      ...validConfig,
+      parameterMapping: {
+        ...validConfig.parameterMapping,
+        empresa: '   ',
+      },
+    });
+
+    expect(errors.parameterMapping?.empresa).toBe(
+      'El nombre del parámetro es obligatorio.',
     );
   });
 

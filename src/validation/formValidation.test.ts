@@ -6,6 +6,7 @@ import type { FormData } from '../types';
 const baseForm: FormData = {
   nombre: 'Joan',
   email: '',
+  empresa: '',
   pais: '',
   ciudad: '',
   mensaje: 'Solicitud de prueba',
@@ -35,11 +36,17 @@ describe('validateForm', () => {
     expect(errors.mensaje).toBe('La solicitud es obligatoria.');
   });
 
+  it('permite empresa vacía', () => {
+    const errors = validateForm(baseForm, countries, citiesForSpain);
+
+    expect(errors.empresa).toBeUndefined();
+    expect(hasFormErrors(errors)).toBe(false);
+  });
+
   it('permite email vacío', () => {
     const errors = validateForm(baseForm, countries, citiesForSpain);
 
     expect(errors.email).toBeUndefined();
-    expect(hasFormErrors(errors)).toBe(false);
   });
 
   it('rechaza email incorrecto', () => {

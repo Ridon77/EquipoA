@@ -72,6 +72,19 @@ npm run test:watch
 
 No existe un enlace visible hacia `/admin` desde la página principal. Hay que escribir la URL manualmente.
 
+## Campos del formulario
+
+| Campo | Obligatorio | Literal |
+|---|---|---|
+| Nombre | Sí | Introduzca su nombre |
+| Email | No | Introduzca su email |
+| Empresa | No | Introduzca su empresa |
+| País | No | Introduzca su país |
+| Ciudad | No | Introduzca su ciudad |
+| Mensaje | Sí | Introduzca su solicitud |
+
+El campo **Empresa** es opcional, admite texto libre y se envía a la API con el parámetro configurado (predeterminado: `empresa`).
+
 ## Página de administración (`/admin`)
 
 Desde `/admin` se puede configurar:
@@ -79,7 +92,7 @@ Desde `/admin` se puede configurar:
 - URL de la API de países y ciudades
 - URL de la API de envío
 - Timeout de la petición (milisegundos)
-- Nombre de cada parámetro enviado a la API (nombre, email, país, ciudad, mensaje)
+- Nombre de cada parámetro enviado a la API (nombre, email, empresa, país, ciudad, mensaje)
 
 Los cambios se guardan con **Guardar configuración** y se pueden restaurar con **Restaurar valores predeterminados**.
 
@@ -97,6 +110,7 @@ Implicaciones:
 - **No se comparte** entre dispositivos ni usuarios
 - Se **pierde** si se eliminan los datos del navegador
 - No se utiliza base de datos ni backend
+- Las configuraciones antiguas sin el parámetro `empresa` se migran automáticamente al cargar
 
 ## Ejemplo de configuración
 
@@ -108,6 +122,7 @@ Implicaciones:
   "parameterMapping": {
     "nombre": "customerName",
     "email": "customerEmail",
+    "empresa": "companyName",
     "pais": "customerCountry",
     "ciudad": "customerCity",
     "mensaje": "customerMessage"
@@ -120,7 +135,7 @@ Implicaciones:
 Con la configuración anterior, un envío podría generar una petición GET como:
 
 ```text
-https://api.ejemplo.com/solicitud?customerName=Joan&customerEmail=joan%40example.com&customerCountry=Espa%C3%B1a&customerCity=Madrid&customerMessage=Necesito+informaci%C3%B3n
+https://api.ejemplo.com/solicitud?customerName=Joan&customerEmail=joan%40example.com&companyName=Tecnolog%C3%ADa+y+Gesti%C3%B3n%2C+S.L.&customerCountry=Espa%C3%B1a&customerCity=Madrid&customerMessage=Necesito+informaci%C3%B3n
 ```
 
 Los campos opcionales vacíos también se incluyen en la URL.

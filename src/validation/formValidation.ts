@@ -7,6 +7,7 @@ export type FormErrors = Partial<Record<FormField, string>>;
 export const formFieldOrder: FormField[] = [
   'nombre',
   'email',
+  'empresa',
   'pais',
   'ciudad',
   'mensaje',
@@ -18,6 +19,7 @@ export function trimFormData(data: FormData): FormData {
   return {
     nombre: data.nombre.trim(),
     email: data.email.trim(),
+    empresa: data.empresa.trim(),
     pais: data.pais.trim(),
     ciudad: data.ciudad.trim(),
     mensaje: data.mensaje.trim(),

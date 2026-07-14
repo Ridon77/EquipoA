@@ -17,6 +17,7 @@ export function buildSubmitUrl(
 
   url.searchParams.set(mapping.nombre, formData.nombre);
   url.searchParams.set(mapping.email, formData.email);
+  url.searchParams.set(mapping.empresa, formData.empresa);
   url.searchParams.set(mapping.pais, formData.pais);
   url.searchParams.set(mapping.ciudad, formData.ciudad);
   url.searchParams.set(mapping.mensaje, formData.mensaje);

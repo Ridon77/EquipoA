@@ -6,6 +6,7 @@ import { buildSubmitUrl, submitForm } from './submitService';
 const formData: FormData = {
   nombre: 'Joan García',
   email: 'joan@example.com',
+  empresa: 'Tecnología y Gestión, S.L.',
   pais: 'España',
   ciudad: '',
   mensaje: 'Solicitud con espacios',
@@ -14,6 +15,7 @@ const formData: FormData = {
 const customMapping = {
   nombre: 'customerName',
   email: 'customerEmail',
+  empresa: 'companyName',
   pais: 'customerCountry',
   ciudad: 'customerCity',
   mensaje: 'customerMessage',
@@ -36,6 +38,7 @@ describe('buildSubmitUrl', () => {
 
     expect(url).toContain('customerName=');
     expect(url).toContain('customerEmail=');
+    expect(url).toContain('companyName=');
     expect(url).toContain('customerCountry=');
     expect(url).toContain('customerCity=');
     expect(url).toContain('customerMessage=');
@@ -61,13 +64,16 @@ describe('buildSubmitUrl', () => {
     expect(url).toContain('customerEmail=joan%40example.com');
   });
 
-  it('codifica acentos', () => {
+  it('codifica acentos y caracteres especiales de empresa', () => {
     const url = new URL(
       buildSubmitUrl(testConfig.submitApiUrl, formData, customMapping),
     );
 
     expect(url.searchParams.get('customerName')).toBe('Joan García');
     expect(url.searchParams.get('customerCountry')).toBe('España');
+    expect(url.searchParams.get('companyName')).toBe(
+      'Tecnología y Gestión, S.L.',
+    );
   });
 
   it('incluye campos vacíos', () => {
@@ -78,6 +84,16 @@ describe('buildSubmitUrl', () => {
     );
 
     expect(url).toContain('customerCity=');
+  });
+
+  it('incluye empresa aunque esté vacía', () => {
+    const url = buildSubmitUrl(
+      testConfig.submitApiUrl,
+      { ...formData, empresa: '' },
+      customMapping,
+    );
+
+    expect(url).toContain('companyName=');
   });
 });
 
