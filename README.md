@@ -94,6 +94,50 @@ En GitHub Pages las rutas usan hash:
 
 El campo **Empresa** es opcional, admite texto libre y se envía a la API con el parámetro configurado (predeterminado: `empresa`).
 
+## Código QR del formulario
+
+En la página principal hay un botón con icono QR junto al título del formulario.
+
+Al pulsarlo:
+
+- Se abre una vista a pantalla completa con un código QR grande.
+- El QR apunta a la URL pública del formulario (`#/`), calculada automáticamente.
+- Debajo aparece un enlace **Abrir formulario** y un botón **Volver al formulario**.
+- Al cerrar, los datos introducidos se conservan sin recargar la página.
+
+La URL se construye con `window.location.origin` e `import.meta.env.BASE_URL`, por lo que funciona en:
+
+- Desarrollo local (`http://localhost:5173/#/`)
+- Vista previa de Vite
+- GitHub Pages con subruta (`https://dominio/ruta-base/#/`)
+
+El QR **no contiene datos del formulario**, credenciales ni rutas administrativas. Solo la URL pública de acceso.
+
+Dependencia utilizada: [`qrcode.react`](https://www.npmjs.com/package/qrcode.react) (generación local en SVG).
+
+### Probar la función
+
+**Local:**
+
+```bash
+npm run dev
+```
+
+Abre el formulario, pulsa el icono QR y escanea el código con un móvil en la misma red o copia el enlace visible.
+
+**Producción:**
+
+Publica la aplicación y abre la URL pública del formulario. El QR generado debe apuntar a la misma URL base con `#/`.
+
+**Simular GitHub Pages en local:**
+
+```bash
+VITE_BASE_PATH=/EquipoA/ npm run build
+npm run preview
+```
+
+El QR debe incluir la subruta configurada en `VITE_BASE_PATH`.
+
 ## Página de administración (`/admin`)
 
 Antes de acceder a `/admin` hay que identificarse en `/admin/login`.

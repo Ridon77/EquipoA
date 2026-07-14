@@ -175,4 +175,65 @@ describe('HomePage', () => {
       screen.getByRole('button', { name: 'Nueva solicitud' }),
     ).toBeInTheDocument();
   });
+
+  it('muestra el botón QR en el formulario', () => {
+    render(<HomePage />);
+
+    const qrButton = screen.getByRole('button', {
+      name: 'Mostrar código QR del formulario',
+    });
+
+    expect(qrButton).toHaveAttribute('type', 'button');
+  });
+
+  it('abre y cierra la superposición QR conservando los datos', async () => {
+    const user = userEvent.setup();
+
+    render(<HomePage />);
+
+    await user.type(screen.getByLabelText(/Introduzca su nombre/i), 'Joan');
+    await user.type(
+      screen.getByLabelText(/Introduzca su empresa/i),
+      'Acme S.L.',
+    );
+
+    const qrButton = screen.getByRole('button', {
+      name: 'Mostrar código QR del formulario',
+    });
+
+    await user.click(qrButton);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Abrir formulario' })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/#\/$/),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Volver al formulario' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Introduzca su nombre/i)).toHaveValue('Joan');
+    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
+      'Acme S.L.',
+    );
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('no muestra el botón QR tras un envío correcto', async () => {
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+
+    const user = userEvent.setup();
+
+    render(<HomePage />);
+    await fillValidForm(user);
+    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+    await screen.findByText('La solicitud se ha procesado correctamente.');
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Mostrar código QR del formulario',
+      }),
+    ).not.toBeInTheDocument();
+  });
 });

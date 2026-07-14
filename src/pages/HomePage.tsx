@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { FormQrOverlay } from '../components/FormQrOverlay';
 import { FormView } from '../components/FormView';
+import { QrTriggerIcon } from '../components/QrIcons';
 import { SuccessView } from '../components/SuccessView';
 import { TechnicalErrorView } from '../components/TechnicalErrorView';
 import { useCountries } from '../hooks/useCountries';
 import { getCitiesForCountry } from '../services/countriesService';
 import { submitForm } from '../services/submitService';
+import { buildPublicFormUrl } from '../utils/buildPublicFormUrl';
 import { emptyFormData } from '../types';
 import type { FormData, ViewState } from '../types';
 import {
@@ -15,6 +18,8 @@ import {
 import type { FormErrors } from '../validation';
 
 export function HomePage() {
+  const qrTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const [viewState, setViewState] = useState<ViewState>('form');
   const [formData, setFormData] = useState<FormData>(emptyFormData());
   const [errors, setErrors] = useState<FormErrors>({});
@@ -31,6 +36,16 @@ export function HomePage() {
     () => getCitiesForCountry(countries, formData.pais.trim()),
     [countries, formData.pais],
   );
+
+  const publicFormUrl = useMemo(
+    () => buildPublicFormUrl(window.location.origin, import.meta.env.BASE_URL),
+    [],
+  );
+
+  const handleCloseQr = () => {
+    setIsQrOpen(false);
+    qrTriggerRef.current?.focus();
+  };
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData((current) => {
@@ -125,11 +140,24 @@ export function HomePage() {
   return (
     <>
       <header className="page-intro">
-        <p className="page-eyebrow">Automatización de procesos</p>
-        <h1 className="page-title">Cuéntanos qué proceso quieres mejorar</h1>
-        <p className="page-subtitle">
-          Completa el formulario y nuestro equipo analizará tu solicitud.
-        </p>
+        <div className="page-intro__top">
+          <div>
+            <p className="page-eyebrow">Automatización de procesos</p>
+            <h1 className="page-title">Cuéntanos qué proceso quieres mejorar</h1>
+            <p className="page-subtitle">
+              Completa el formulario y nuestro equipo analizará tu solicitud.
+            </p>
+          </div>
+          <button
+            ref={qrTriggerRef}
+            type="button"
+            className="qr-trigger"
+            aria-label="Mostrar código QR del formulario"
+            onClick={() => setIsQrOpen(true)}
+          >
+            <QrTriggerIcon />
+          </button>
+        </div>
       </header>
 
       <section className="surface-card">
@@ -147,6 +175,12 @@ export function HomePage() {
           processError={processError}
         />
       </section>
+
+      <FormQrOverlay
+        isOpen={isQrOpen}
+        formUrl={publicFormUrl}
+        onClose={handleCloseQr}
+      />
     </>
   );
 }

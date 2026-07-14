@@ -30,6 +30,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify admin auth configuration
+        run: |
+          if [ -z "$VITE_ADMIN_USERNAME" ] || [ -z "$VITE_ADMIN_PASSWORD_HASH" ]; then
+            echo "::error::Configura en el repositorio la variable VITE_ADMIN_USERNAME y el secreto VITE_ADMIN_PASSWORD_HASH (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+        env:
+          VITE_ADMIN_USERNAME: ${{ vars.VITE_ADMIN_USERNAME }}
+          VITE_ADMIN_PASSWORD_HASH: ${{ secrets.VITE_ADMIN_PASSWORD_HASH }}
+
       - name: Run tests
         run: npm test
         env:

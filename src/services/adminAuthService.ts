@@ -65,6 +65,11 @@ export function isAdminAuthConfigured(): boolean {
   return username.length > 0 && passwordHash.length > 0;
 }
 
+/** TEMP: set VITE_ADMIN_AUTH_DISABLED=true to bypass admin login. */
+export function isAdminAuthDisabled(): boolean {
+  return import.meta.env.VITE_ADMIN_AUTH_DISABLED === 'true';
+}
+
 function readRawSession(): AdminSession | null {
   const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
 
@@ -206,6 +211,10 @@ export function consumeSessionExpiredNotice(): boolean {
 }
 
 export function isAdminAuthenticated(now = Date.now()): boolean {
+  if (isAdminAuthDisabled()) {
+    return true;
+  }
+
   const session = readRawSession();
 
   if (!session) {

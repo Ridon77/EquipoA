@@ -9,6 +9,7 @@ import {
   getLoginBlockState,
   isAdminAuthenticated,
   isAdminAuthConfigured,
+  isAdminAuthDisabled,
   logoutAdmin,
   markSessionExpiredNotice,
   recordFailedLoginAttempt,
@@ -37,7 +38,14 @@ describe('adminAuthService', () => {
     expect(getConfiguredSessionMinutes()).toBe(30);
   });
 
-  it('autentica credenciales válidas', async () => {
+  it('omite autenticaci?n cuando VITE_ADMIN_AUTH_DISABLED=true', () => {
+    vi.stubEnv('VITE_ADMIN_AUTH_DISABLED', 'true');
+
+    expect(isAdminAuthDisabled()).toBe(true);
+    expect(isAdminAuthenticated()).toBe(true);
+  });
+
+  it('autentica credenciales v?lidas', async () => {
     await expect(authenticateAdmin('Admin', 'EquipoA')).resolves.toBe(true);
     expect(isAdminAuthenticated()).toBe(true);
     expect(getAdminSessionExpiration()).not.toBeNull();
@@ -48,7 +56,7 @@ describe('adminAuthService', () => {
     expect(isAdminAuthenticated()).toBe(false);
   });
 
-  it('rechaza contraseña incorrecta', async () => {
+  it('rechaza contrase?a incorrecta', async () => {
     await expect(authenticateAdmin('Admin', 'Incorrecta')).resolves.toBe(false);
     expect(isAdminAuthenticated()).toBe(false);
   });
@@ -63,31 +71,31 @@ describe('adminAuthService', () => {
     );
   });
 
-  it('crea y lee una sesión válida', () => {
+  it('crea y lee una sesi?n v?lida', () => {
     createAdminSession(1_000);
     expect(isAdminAuthenticated(1_500)).toBe(true);
     expect(getAdminSessionExpiration()).toBe(1_000 + 30 * 60 * 1000);
   });
 
-  it('invalida una sesión expirada', () => {
+  it('invalida una sesi?n expirada', () => {
     createAdminSession(1_000);
     expect(isAdminAuthenticated(1_000 + 30 * 60 * 1000 + 1)).toBe(false);
     expect(consumeSessionExpiredNotice()).toBe(true);
   });
 
-  it('invalida una sesión corrupta', () => {
+  it('invalida una sesi?n corrupta', () => {
     sessionStorage.setItem('equipo-a-admin-session', '{invalid');
     expect(isAdminAuthenticated()).toBe(false);
     expect(sessionStorage.getItem('equipo-a-admin-session')).toBeNull();
   });
 
-  it('elimina la sesión al cerrar sesión', () => {
+  it('elimina la sesi?n al cerrar sesi?n', () => {
     createAdminSession();
     logoutAdmin();
     expect(isAdminAuthenticated()).toBe(false);
   });
 
-  it('no elimina la configuración de localStorage al cerrar sesión', () => {
+  it('no elimina la configuraci?n de localStorage al cerrar sesi?n', () => {
     localStorage.setItem(CONFIG_STORAGE_KEY, '{"countriesApiUrl":"x"}');
     createAdminSession();
     logoutAdmin();
@@ -131,19 +139,19 @@ describe('adminAuthService', () => {
     expect(sessionStorage.getItem('equipo-a-admin-login-attempts')).toBeNull();
   });
 
-  it('expone aviso de sesión caducada', () => {
+  it('expone aviso de sesi?n caducada', () => {
     markSessionExpiredNotice();
     expect(consumeSessionExpiredNotice()).toBe(true);
     expect(consumeSessionExpiredNotice()).toBe(false);
   });
 
-  it('usa 30 minutos por defecto con timeout inválido', () => {
+  it('usa 30 minutos por defecto con timeout inv?lido', () => {
     vi.stubEnv('VITE_ADMIN_SESSION_MINUTES', 'invalid');
     createAdminSession(0);
     expect(getAdminSessionExpiration()).toBe(30 * 60 * 1000);
   });
 
-  it('clearAdminSession elimina solo la sesión', () => {
+  it('clearAdminSession elimina solo la sesi?n', () => {
     createAdminSession();
     clearAdminSession();
     expect(isAdminAuthenticated()).toBe(false);

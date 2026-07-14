@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProtectedAdminRoute } from './ProtectedAdminRoute';
 import { AdminPage } from '../pages/AdminPage';
 import { AdminLoginPage } from '../pages/AdminLoginPage';
@@ -27,6 +27,11 @@ function renderProtectedAdmin(initialEntry: string) {
 describe('ProtectedAdminRoute', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    vi.unstubAllEnvs();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('redirige /admin al login sin sesión', () => {
@@ -38,6 +43,15 @@ describe('ProtectedAdminRoute', () => {
     expect(
       screen.queryByRole('heading', { name: 'Administración' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('permite /admin sin sesión cuando la autenticación está deshabilitada', () => {
+    vi.stubEnv('VITE_ADMIN_AUTH_DISABLED', 'true');
+    renderProtectedAdmin('/admin');
+
+    expect(
+      screen.getByRole('heading', { name: 'Administración' }),
+    ).toBeInTheDocument();
   });
 
   it('muestra /admin con sesión válida', () => {
