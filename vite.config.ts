@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       globals: true,
       setupFiles: './src/test/setup.ts',
+      env: {
+        VITE_ADMIN_USERNAME: 'Admin',
+        VITE_ADMIN_PASSWORD_HASH:
+          '006a516c76cd0a40d62017cfe52907d8210c14f031fb1e7fd7580ea9e11243a9',
+        VITE_ADMIN_SESSION_MINUTES: '30',
+      },
     },
   };
 });

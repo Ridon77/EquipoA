@@ -32,11 +32,18 @@ jobs:
 
       - name: Run tests
         run: npm test
+        env:
+          VITE_ADMIN_USERNAME: ${{ vars.VITE_ADMIN_USERNAME }}
+          VITE_ADMIN_PASSWORD_HASH: ${{ secrets.VITE_ADMIN_PASSWORD_HASH }}
+          VITE_ADMIN_SESSION_MINUTES: ${{ vars.VITE_ADMIN_SESSION_MINUTES }}
 
       - name: Build
         run: npm run build
         env:
           VITE_BASE_PATH: /EquipoA/
+          VITE_ADMIN_USERNAME: ${{ vars.VITE_ADMIN_USERNAME }}
+          VITE_ADMIN_PASSWORD_HASH: ${{ secrets.VITE_ADMIN_PASSWORD_HASH }}
+          VITE_ADMIN_SESSION_MINUTES: ${{ vars.VITE_ADMIN_SESSION_MINUTES }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

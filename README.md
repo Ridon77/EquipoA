@@ -68,9 +68,18 @@ npm run test:watch
 | Ruta | Descripción |
 |---|---|
 | `/` | Formulario principal de solicitud |
-| `/admin` | Configuración de la aplicación |
+| `/admin/login` | Acceso a la administración |
+| `/admin` | Configuración de la aplicación (requiere sesión) |
 
-No existe un enlace visible hacia `/admin` desde la página principal. Hay que escribir la URL manualmente.
+No existe un enlace visible hacia `/admin` ni `/admin/login` desde la página principal. Hay que escribir la URL manualmente.
+
+En GitHub Pages las rutas usan hash:
+
+| Página | URL |
+|---|---|
+| Formulario | `https://ridon77.github.io/EquipoA/#/` |
+| Login admin | `https://ridon77.github.io/EquipoA/#/admin/login` |
+| Administración | `https://ridon77.github.io/EquipoA/#/admin` |
 
 ## Campos del formulario
 
@@ -87,6 +96,8 @@ El campo **Empresa** es opcional, admite texto libre y se envía a la API con el
 
 ## Página de administración (`/admin`)
 
+Antes de acceder a `/admin` hay que identificarse en `/admin/login`.
+
 Desde `/admin` se puede configurar:
 
 - URL de la API de países y ciudades
@@ -96,9 +107,61 @@ Desde `/admin` se puede configurar:
 
 Los cambios se guardan con **Guardar configuración** y se pueden restaurar con **Restaurar valores predeterminados**.
 
-### Aviso de seguridad
+**Cerrar sesión** elimina únicamente la autenticación almacenada en `sessionStorage`. La configuración guardada en `localStorage` no se borra.
 
-Esta página **no dispone de autenticación**. Conocer la URL `/admin` es suficiente para acceder a la configuración. No debe considerarse un mecanismo de seguridad.
+### Variables de entorno del login
+
+Copia `.env.example` a `.env.local` y configura:
+
+```env
+VITE_ADMIN_USERNAME=Admin
+VITE_ADMIN_PASSWORD_HASH=hash_sha256_en_minusculas
+VITE_ADMIN_SESSION_MINUTES=30
+```
+
+| Variable | Descripción |
+|---|---|
+| `VITE_ADMIN_USERNAME` | Usuario administrador |
+| `VITE_ADMIN_PASSWORD_HASH` | Hash SHA-256 (hex minúsculas) de la contraseña |
+| `VITE_ADMIN_SESSION_MINUTES` | Duración de la sesión en minutos (predeterminado: 30) |
+
+Generar un hash SHA-256 con Node.js:
+
+```bash
+node -e "const crypto=require('crypto'); console.log(crypto.createHash('sha256').update('CAMBIA_ESTA_CONTRASEÑA').digest('hex'))"
+```
+
+En desarrollo, Vite carga automáticamente `.env.local`. En compilación (`npm run build`), las variables deben estar disponibles en el entorno de build.
+
+Para GitHub Pages, configura en el repositorio:
+
+- **Variable** `VITE_ADMIN_USERNAME`
+- **Secreto** `VITE_ADMIN_PASSWORD_HASH`
+- **Variable** `VITE_ADMIN_SESSION_MINUTES` (opcional)
+
+El workflow de despliegue las inyecta durante `npm test` y `npm run build`.
+
+### Sesión administrativa
+
+- Se guarda en `sessionStorage` bajo la clave `equipo-a-admin-session`.
+- Expira automáticamente tras el tiempo configurado.
+- Si caduca, redirige a `/admin/login` con el aviso correspondiente.
+- Tras **Cerrar sesión**, `/admin` vuelve a estar protegida.
+
+### Aviso de seguridad del login frontend
+
+El acceso administrativo se valida **completamente en el navegador**. No es autenticación de alta seguridad porque:
+
+- No hay backend ni base de datos.
+- El código JavaScript puede inspeccionarse.
+- Las variables de Vite quedan embebidas en los archivos compilados enviados al navegador.
+- Aunque el hash se configure como secreto en GitHub Actions, **puede quedar incluido en el bundle de producción** y no permanece oculto en el cliente.
+- `sessionStorage` puede modificarse con las herramientas del navegador.
+- El límite de intentos fallidos es solo una medida de interfaz.
+
+**No utilices este mecanismo para proteger secretos, claves de API ni credenciales reales.** Para seguridad real, usa autenticación con backend o un proveedor externo (OAuth, SSO, etc.).
+
+La configuración funcional de la aplicación sigue guardándose en `localStorage` y es independiente de la sesión administrativa.
 
 ## Persistencia con `localStorage`
 
@@ -150,9 +213,8 @@ No se almacenan secretos, tokens ni claves privadas en el frontend.
 
 - Sin backend ni base de datos
 - Configuración no sincronizada entre dispositivos
-- `/admin` sin autenticación
+- Login administrativo solo en frontend (ver aviso de seguridad)
 - Dependencia de APIs externas con CORS habilitado
-- MVP sin estilos avanzados ni imágenes
 - En GitHub Pages las rutas usan hash (`#/admin`)
 
 ## Estructura del proyecto
@@ -180,14 +242,15 @@ La aplicación se publica automáticamente en GitHub Pages al hacer push a `main
 https://ridon77.github.io/EquipoA/
 ```
 
-Rutas:
+Rutas en producción:
 
 | Página | URL |
 |---|---|
 | Formulario | `https://ridon77.github.io/EquipoA/#/` |
+| Login admin | `https://ridon77.github.io/EquipoA/#/admin/login` |
 | Administración | `https://ridon77.github.io/EquipoA/#/admin` |
 
-> Se usa `HashRouter` para que `/admin` funcione al recargar la página en GitHub Pages.
+> Se usa `HashRouter` para que las rutas funcionen al recargar la página en GitHub Pages.
 
 ### Activar GitHub Pages (solo la primera vez)
 
