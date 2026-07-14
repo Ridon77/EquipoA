@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { logoutAdmin } from '../services/adminAuthService';
+import { Link } from 'react-router-dom';
 import { DEFAULT_CONFIG } from '../config/defaultConfig';
 import { clearCountriesCache } from '../services/countriesService';
 import {
@@ -23,7 +22,6 @@ const RESTORE_CONFIRMATION =
   '¿Desea restaurar los valores predeterminados? Se perderá la configuración guardada.';
 
 export function AdminPage() {
-  const navigate = useNavigate();
   const [config, setConfig] = useState<AppConfig>(() => loadConfig());
   const [errors, setErrors] = useState<AdminErrors>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -112,41 +110,20 @@ export function AdminPage() {
   const getParameterError = (field: ParameterField): string | undefined =>
     errors.parameterMapping?.[field];
 
-  const handleLogout = () => {
-    logoutAdmin();
-    navigate('/admin/login', { replace: true });
-  };
-
   return (
     <>
       <header className="admin-header">
-        <div className="admin-header__top">
-          <div>
-            <h1 className="admin-header__title">Administración</h1>
-            <p className="admin-header__description">
-              Configure los servicios externos y el mapeo de parámetros de
-              envío.
-            </p>
-          </div>
-          <div className="admin-header__actions">
-            <span className="admin-session-badge">
-              Sesión administrativa activa
-            </span>
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={handleLogout}
-            >
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
+        <h1 className="admin-header__title">Administración</h1>
+        <p className="admin-header__description">
+          Configure los servicios externos y el mapeo de parámetros de envío.
+        </p>
       </header>
 
       <section className="surface-card surface-card--admin">
         <div className="status-panel status-panel--warning" role="note">
-          El acceso administrativo se valida en el navegador. No sustituye a una
-          autenticación con backend y no debe utilizarse para proteger secretos.
+          Esta página no dispone de autenticación. Conocer la URL `/admin` es
+          suficiente para acceder a la configuración. No debe considerarse un
+          mecanismo de seguridad.
         </div>
 
         {successMessage && (
