@@ -243,7 +243,10 @@ export async function authenticateAdmin(
     getAdminCredentialsConfig();
   const passwordDigest = await hashPassword(password);
 
-  if (username === configuredUsername && passwordDigest === passwordHash) {
+  if (
+    username.toLowerCase() === configuredUsername.toLowerCase() &&
+    passwordDigest === passwordHash
+  ) {
     createAdminSession();
     resetLoginAttempts();
     return true;
