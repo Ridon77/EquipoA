@@ -138,7 +138,7 @@ No se almacenan secretos, tokens ni claves privadas en el frontend.
 - `/admin` sin autenticación
 - Dependencia de APIs externas con CORS habilitado
 - MVP sin estilos avanzados ni imágenes
-- En despliegues estáticos con rutas del tipo `/admin`, puede ser necesario usar `HashRouter` o configurar redirecciones en el servidor
+- En GitHub Pages las rutas usan hash (`#/admin`)
 
 ## Estructura del proyecto
 
@@ -155,15 +155,58 @@ src/
 └── main.tsx
 ```
 
-## Despliegue en GitHub Pages (opcional)
+## Despliegue en GitHub Pages
 
-Si se desea publicar en GitHub Pages, conviene:
+La aplicación se publica automáticamente en GitHub Pages al hacer push a `main`.
 
-1. Configurar `base` en `vite.config.ts` con el nombre del repositorio
-2. Usar `HashRouter` en lugar de `BrowserRouter` para evitar errores al recargar rutas como `/admin`
-3. Crear un workflow de GitHub Actions que ejecute `npm run build` y publique `dist/`
+### URL pública
 
-Este paso no es obligatorio para el funcionamiento local del proyecto.
+```text
+https://ridon77.github.io/EquipoA/
+```
+
+Rutas:
+
+| Página | URL |
+|---|---|
+| Formulario | `https://ridon77.github.io/EquipoA/#/` |
+| Administración | `https://ridon77.github.io/EquipoA/#/admin` |
+
+> Se usa `HashRouter` para que `/admin` funcione al recargar la página en GitHub Pages.
+
+### Activar GitHub Pages (solo la primera vez)
+
+1. Abre [https://github.com/Ridon77/EquipoA/settings/pages](https://github.com/Ridon77/EquipoA/settings/pages)
+2. En **Build and deployment → Source**, selecciona **GitHub Actions**
+3. Sube los cambios a `main`:
+
+```bash
+git add .
+git commit -m "ci: configurar despliegue en GitHub Pages"
+git push origin main
+```
+
+4. Ve a la pestaña **Actions** del repositorio y espera a que termine el workflow **Deploy to GitHub Pages**
+5. Abre la URL publicada (puede tardar 1–2 minutos)
+
+### Desarrollo local
+
+En local sigue funcionando igual:
+
+```bash
+npm run dev
+```
+
+Abre [http://localhost:5173](http://localhost:5173).
+
+Para simular la compilación de producción con la misma base que GitHub Pages:
+
+```bash
+VITE_BASE_PATH=/EquipoA/ npm run build
+npm run preview
+```
+
+Abre [http://localhost:4173/EquipoA/](http://localhost:4173/EquipoA/).
 
 ## Licencia
 
