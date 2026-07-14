@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -127,16 +127,23 @@ describe('AdminLoginPage', () => {
       await user.clear(screen.getByLabelText('Contraseña'));
       await user.type(screen.getByLabelText('Contraseña'), 'Incorrecta');
       await user.click(screen.getByRole('button', { name: 'Acceder' }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Contraseña')).toHaveValue('');
+      });
     }
 
-    expect(
-      screen.getByText(/Se han producido demasiados intentos/i),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Se han producido demasiados intentos/i),
+      ).toBeInTheDocument();
+    });
     expect(screen.getByRole('button', { name: 'Acceder' })).toBeDisabled();
   });
 
-  it('permite reintentar cuando finaliza el bloqueo', async () => {
+  it('permite reintentar cuando finaliza el bloqueo', () => {
     vi.useFakeTimers();
+    vi.setSystemTime(0);
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       recordFailedLoginAttempt(0);
@@ -146,11 +153,11 @@ describe('AdminLoginPage', () => {
 
     expect(screen.getByRole('button', { name: 'Acceder' })).toBeDisabled();
 
-    vi.advanceTimersByTime(61_000);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Acceder' })).not.toBeDisabled();
+    act(() => {
+      vi.advanceTimersByTime(61_000);
     });
+
+    expect(screen.getByRole('button', { name: 'Acceder' })).not.toBeDisabled();
   });
 
   it('muestra aviso cuando falta configuración', async () => {

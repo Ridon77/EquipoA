@@ -124,8 +124,17 @@ export function AdminLoginPage() {
       }
 
       setPassword('');
-      setFormError(AUTH_MESSAGES.invalidCredentials);
-      setBlockState(getLoginBlockState());
+      const nextBlock = getLoginBlockState();
+      setBlockState(nextBlock);
+
+      if (nextBlock.blocked) {
+        setFormError(
+          `${AUTH_MESSAGES.tooManyAttempts} (${nextBlock.remainingSeconds} s)`,
+        );
+      } else {
+        setFormError(AUTH_MESSAGES.invalidCredentials);
+      }
+
       formErrorRef.current?.focus();
     } catch (error) {
       if (error instanceof Error && error.message === 'LOGIN_BLOCKED') {
