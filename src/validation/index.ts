@@ -10,6 +10,7 @@ export {
   hasAdminErrors,
   parameterFieldLabels,
   parameterFieldOrder,
+  requiredFieldAriaLabels,
   trimAdminConfig,
   validateAdminConfig,
 } from './adminValidation';

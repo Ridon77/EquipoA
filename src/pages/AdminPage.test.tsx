@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CONFIG_STORAGE_KEY } from '../config/defaultConfig';
+import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
 import { AdminPage } from './AdminPage';
 
 function renderAdminPage() {
@@ -25,6 +25,23 @@ describe('AdminPage', () => {
     expect(screen.getByLabelText(/Parámetro para Empresa/i)).toBeInTheDocument();
   });
 
+  it('muestra casillas de obligatoriedad', () => {
+    renderAdminPage();
+
+    expect(
+      screen.getByRole('columnheader', { name: 'Obligatorio' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Marcar Nombre como obligatorio'),
+    ).toBeChecked();
+    expect(
+      screen.getByLabelText('Marcar Email como obligatorio'),
+    ).not.toBeChecked();
+    expect(
+      screen.getByLabelText('Marcar Ciudad como obligatoria'),
+    ).not.toBeChecked();
+  });
+
   it('permite modificar el parámetro de empresa', async () => {
     const user = userEvent.setup();
 
@@ -37,7 +54,7 @@ describe('AdminPage', () => {
     expect(empresaInput).toHaveValue('companyName');
   });
 
-  it('guarda y recupera el parámetro de empresa en localStorage', async () => {
+  it('guarda y recupera el parámetro de empresa y requiredFields', async () => {
     const user = userEvent.setup();
 
     renderAdminPage();
@@ -45,6 +62,7 @@ describe('AdminPage', () => {
     const empresaInput = screen.getByLabelText(/Parámetro para Empresa/i);
     await user.clear(empresaInput);
     await user.type(empresaInput, 'companyName');
+    await user.click(screen.getByLabelText('Marcar Empresa como obligatorio'));
     await user.click(screen.getByRole('button', { name: 'Guardar configuración' }));
 
     expect(
@@ -53,5 +71,41 @@ describe('AdminPage', () => {
 
     const stored = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) ?? '{}');
     expect(stored.parameterMapping.empresa).toBe('companyName');
+    expect(stored.requiredFields.empresa).toBe(true);
+    expect(stored.requiredFields.nombre).toBe(true);
+  });
+
+  it('marca País automáticamente al marcar Ciudad', async () => {
+    const user = userEvent.setup();
+
+    renderAdminPage();
+
+    await user.click(screen.getByLabelText('Marcar Ciudad como obligatoria'));
+
+    expect(screen.getByLabelText('Marcar País como obligatorio')).toBeChecked();
+    expect(screen.getByLabelText('Marcar País como obligatorio')).toBeDisabled();
+    expect(
+      screen.getByText(
+        'País es obligatorio porque Ciudad depende de un país seleccionado.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('restaura la obligatoriedad predeterminada', async () => {
+    const user = userEvent.setup();
+    window.confirm = () => true;
+
+    renderAdminPage();
+
+    await user.click(screen.getByLabelText('Marcar Email como obligatorio'));
+    await user.click(
+      screen.getByRole('button', { name: 'Restaurar valores predeterminados' }),
+    );
+
+    expect(
+      screen.getByLabelText('Marcar Email como obligatorio'),
+    ).not.toBeChecked();
+    expect(screen.getByLabelText('Marcar Nombre como obligatorio')).toBeChecked();
+    expect(DEFAULT_CONFIG.requiredFields.email).toBe(false);
   });
 });

@@ -1,30 +1,109 @@
 import { CONFIG_STORAGE_KEY, defaultConfig } from '../config/defaultConfig';
-import type { AppConfig } from '../types';
+import type { AppConfig, ParameterMapping, RequiredFieldsConfig } from '../types';
 
-function isValidConfig(value: unknown): value is AppConfig {
-  if (typeof value !== 'object' || value === null) {
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function migrateParameterMapping(stored: unknown): ParameterMapping {
+  const source = isObject(stored) ? stored : {};
+
+  return {
+    nombre:
+      typeof source.nombre === 'string'
+        ? source.nombre
+        : defaultConfig.parameterMapping.nombre,
+    email:
+      typeof source.email === 'string'
+        ? source.email
+        : defaultConfig.parameterMapping.email,
+    empresa:
+      typeof source.empresa === 'string'
+        ? source.empresa
+        : defaultConfig.parameterMapping.empresa,
+    pais:
+      typeof source.pais === 'string'
+        ? source.pais
+        : defaultConfig.parameterMapping.pais,
+    ciudad:
+      typeof source.ciudad === 'string'
+        ? source.ciudad
+        : defaultConfig.parameterMapping.ciudad,
+    mensaje:
+      typeof source.mensaje === 'string'
+        ? source.mensaje
+        : defaultConfig.parameterMapping.mensaje,
+  };
+}
+
+function migrateRequiredFields(stored: unknown): RequiredFieldsConfig {
+  const source = isObject(stored) ? stored : {};
+
+  return {
+    nombre:
+      typeof source.nombre === 'boolean'
+        ? source.nombre
+        : defaultConfig.requiredFields.nombre,
+    email:
+      typeof source.email === 'boolean'
+        ? source.email
+        : defaultConfig.requiredFields.email,
+    empresa:
+      typeof source.empresa === 'boolean'
+        ? source.empresa
+        : defaultConfig.requiredFields.empresa,
+    pais:
+      typeof source.pais === 'boolean'
+        ? source.pais
+        : defaultConfig.requiredFields.pais,
+    ciudad:
+      typeof source.ciudad === 'boolean'
+        ? source.ciudad
+        : defaultConfig.requiredFields.ciudad,
+    mensaje:
+      typeof source.mensaje === 'boolean'
+        ? source.mensaje
+        : defaultConfig.requiredFields.mensaje,
+  };
+}
+
+function isLoadableConfig(value: unknown): value is Record<string, unknown> {
+  if (!isObject(value)) {
     return false;
   }
 
-  const config = value as Record<string, unknown>;
-
   return (
-    typeof config.countriesApiUrl === 'string' &&
-    typeof config.submitApiUrl === 'string' &&
-    typeof config.submitTimeoutMs === 'number' &&
-    typeof config.parameterMapping === 'object' &&
-    config.parameterMapping !== null
+    typeof value.countriesApiUrl === 'string' &&
+    typeof value.submitApiUrl === 'string' &&
+    typeof value.submitTimeoutMs === 'number' &&
+    isObject(value.parameterMapping)
   );
 }
 
-export function migrateConfig(stored: Partial<AppConfig>): AppConfig {
+export function migrateConfig(stored: Partial<AppConfig> | Record<string, unknown>): AppConfig {
+  const source = isObject(stored) ? stored : {};
+  const requiredFields = migrateRequiredFields(source.requiredFields);
+
+  // Ciudad obligatoria implica País obligatorio.
+  if (requiredFields.ciudad) {
+    requiredFields.pais = true;
+  }
+
   return {
-    ...defaultConfig,
-    ...stored,
-    parameterMapping: {
-      ...defaultConfig.parameterMapping,
-      ...(stored.parameterMapping ?? {}),
-    },
+    countriesApiUrl:
+      typeof source.countriesApiUrl === 'string'
+        ? source.countriesApiUrl
+        : defaultConfig.countriesApiUrl,
+    submitApiUrl:
+      typeof source.submitApiUrl === 'string'
+        ? source.submitApiUrl
+        : defaultConfig.submitApiUrl,
+    submitTimeoutMs:
+      typeof source.submitTimeoutMs === 'number'
+        ? source.submitTimeoutMs
+        : defaultConfig.submitTimeoutMs,
+    parameterMapping: migrateParameterMapping(source.parameterMapping),
+    requiredFields,
   };
 }
 
@@ -36,7 +115,7 @@ export function loadConfig(): AppConfig {
     }
 
     const parsed: unknown = JSON.parse(stored);
-    if (isValidConfig(parsed)) {
+    if (isLoadableConfig(parsed)) {
       return migrateConfig(parsed);
     }
   } catch {

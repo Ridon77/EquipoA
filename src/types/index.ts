@@ -16,11 +16,21 @@ export interface ParameterMapping {
   mensaje: string;
 }
 
+export interface RequiredFieldsConfig {
+  nombre: boolean;
+  email: boolean;
+  empresa: boolean;
+  pais: boolean;
+  ciudad: boolean;
+  mensaje: boolean;
+}
+
 export interface AppConfig {
   countriesApiUrl: string;
   submitApiUrl: string;
   submitTimeoutMs: number;
   parameterMapping: ParameterMapping;
+  requiredFields: RequiredFieldsConfig;
 }
 
 export type ApiResult =

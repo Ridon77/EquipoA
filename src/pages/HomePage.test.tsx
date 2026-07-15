@@ -29,11 +29,8 @@ const TECHNICAL_ERROR_MESSAGE =
   'No ha sido posible conectarse con el servicio. Por favor, póngase en contacto con el administrador.';
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText(/Introduzca su nombre/i), 'Joan');
-  await user.type(
-    screen.getByLabelText(/Introduzca su solicitud/i),
-    'Necesito ayuda',
-  );
+  await user.type(screen.getByLabelText(/^Nombre/i), 'Joan');
+  await user.type(screen.getByLabelText(/^Solicitud/i), 'Necesito ayuda');
 }
 
 describe('HomePage', () => {
@@ -44,9 +41,7 @@ describe('HomePage', () => {
   it('muestra el campo Empresa con su literal', () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByLabelText(/Introduzca su empresa/i),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Empresa/i)).toBeInTheDocument();
   });
 
   it('permite enviar con empresa vacía', async () => {
@@ -68,18 +63,13 @@ describe('HomePage', () => {
 
     render(<HomePage />);
 
-    await user.type(screen.getByLabelText(/Introduzca su nombre/i), 'Joan');
-    await user.type(
-      screen.getByLabelText(/Introduzca su empresa/i),
-      'Acme S.L.',
-    );
+    await user.type(screen.getByLabelText(/^Nombre/i), 'Joan');
+    await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
-    expect(screen.getByLabelText(/Introduzca su nombre/i)).toHaveValue('Joan');
-    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
-      'Acme S.L.',
-    );
-    expect(screen.getByText('La solicitud es obligatoria.')).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Nombre/i)).toHaveValue('Joan');
+    expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('Acme S.L.');
+    expect(screen.getByText('Introduzca su solicitud.')).toBeInTheDocument();
     expect(submitForm).not.toHaveBeenCalled();
   });
 
@@ -92,10 +82,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     render(<HomePage />);
-    await user.type(
-      screen.getByLabelText(/Introduzca su empresa/i),
-      'Acme S.L.',
-    );
+    await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -105,9 +92,7 @@ describe('HomePage', () => {
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
-      'Acme S.L.',
-    );
+    expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('Acme S.L.');
   });
 
   it('muestra el mensaje obligatorio en error técnico', async () => {
@@ -130,10 +115,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     render(<HomePage />);
-    await user.type(
-      screen.getByLabelText(/Introduzca su empresa/i),
-      'Acme S.L.',
-    );
+    await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -141,9 +123,7 @@ describe('HomePage', () => {
       await screen.findByRole('button', { name: 'Volver al formulario' }),
     );
 
-    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
-      'Acme S.L.',
-    );
+    expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('Acme S.L.');
   });
 
   it('limpia empresa tras nueva solicitud', async () => {
@@ -152,10 +132,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     render(<HomePage />);
-    await user.type(
-      screen.getByLabelText(/Introduzca su empresa/i),
-      'Acme S.L.',
-    );
+    await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -163,7 +140,7 @@ describe('HomePage', () => {
       await screen.findByRole('button', { name: 'Nueva solicitud' }),
     );
 
-    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue('');
+    expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('');
   });
 
   it('muestra confirmación tras éxito', async () => {
@@ -198,11 +175,8 @@ describe('HomePage', () => {
 
     render(<HomePage />);
 
-    await user.type(screen.getByLabelText(/Introduzca su nombre/i), 'Joan');
-    await user.type(
-      screen.getByLabelText(/Introduzca su empresa/i),
-      'Acme S.L.',
-    );
+    await user.type(screen.getByLabelText(/^Nombre/i), 'Joan');
+    await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
 
     const qrButton = screen.getByRole('button', {
       name: 'Mostrar código QR del formulario',
@@ -219,10 +193,8 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: 'Volver al formulario' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Introduzca su nombre/i)).toHaveValue('Joan');
-    expect(screen.getByLabelText(/Introduzca su empresa/i)).toHaveValue(
-      'Acme S.L.',
-    );
+    expect(screen.getByLabelText(/^Nombre/i)).toHaveValue('Joan');
+    expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('Acme S.L.');
     expect(document.body.style.overflow).toBe('');
   });
 

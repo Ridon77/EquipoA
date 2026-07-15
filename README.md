@@ -81,16 +81,26 @@ En GitHub Pages las rutas usan hash:
 
 ## Campos del formulario
 
-| Campo | Obligatorio | Literal |
+| Campo | Obligatorio por defecto | Notas |
 |---|---|---|
-| Nombre | Sí | Introduzca su nombre |
-| Email | No | Introduzca su email |
-| Empresa | No | Introduzca su empresa |
-| País | No | País (desplegable en castellano) |
-| Ciudad | No | Ciudad (dependiente del país) |
-| Mensaje | Sí | Introduzca su solicitud |
+| Nombre | Sí | Configurable en `/admin` |
+| Email | No | Si tiene valor, se valida el formato |
+| Empresa | No | Configurable en `/admin` |
+| País | No | Buscador en castellano |
+| Ciudad | No | Dependiente del país |
+| Mensaje | Sí | Configurable en `/admin` |
 
-El campo **Empresa** es opcional, admite texto libre y se envía a la API con el parámetro configurado (predeterminado: `empresa`).
+La obligatoriedad de cada campo se configura en `/admin` (columna **Obligatorio**) y se guarda en `localStorage`. No se envía a la API REST.
+
+### Predeterminados
+
+```text
+nombre: sí, email: no, empresa: no, pais: no, ciudad: no, mensaje: sí
+```
+
+Si Ciudad se marca como obligatoria, País se marca automáticamente y no se puede desmarcar mientras Ciudad lo sea.
+
+Las configuraciones antiguas sin `requiredFields` se migran aplicando estos valores predeterminados sin perder URLs, timeout ni mapeo de parámetros.
 
 ## País y ciudad en castellano
 
@@ -165,6 +175,7 @@ Desde `/admin` se puede configurar:
 - URL de la API de envío
 - Timeout de la petición (milisegundos)
 - Nombre de cada parámetro enviado a la API (nombre, email, empresa, país, ciudad, mensaje)
+- Qué campos del formulario público son **obligatorios**
 
 Los cambios se guardan con **Guardar configuración** y se pueden restaurar con **Restaurar valores predeterminados**.
 

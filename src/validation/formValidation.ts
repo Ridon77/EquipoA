@@ -1,4 +1,4 @@
-import type { FormData } from '../types';
+import type { FormData, RequiredFieldsConfig } from '../types';
 
 export type FormField = keyof FormData;
 
@@ -28,35 +28,46 @@ export function trimFormData(data: FormData): FormData {
 
 export function validateForm(
   data: FormData,
+  requiredFields: RequiredFieldsConfig,
   countryOptions: string[],
   cityOptions: string[],
 ): FormErrors {
   const trimmed = trimFormData(data);
   const errors: FormErrors = {};
 
-  if (!trimmed.nombre) {
-    errors.nombre = 'El nombre es obligatorio.';
+  if (requiredFields.nombre && !trimmed.nombre) {
+    errors.nombre = 'Introduzca su nombre.';
   }
 
-  if (trimmed.email && !EMAIL_PATTERN.test(trimmed.email)) {
-    errors.email = 'El email no tiene un formato válido.';
+  if (requiredFields.email && !trimmed.email) {
+    errors.email = 'Introduzca su email.';
+  } else if (trimmed.email && !EMAIL_PATTERN.test(trimmed.email)) {
+    errors.email = 'Introduzca una dirección de correo válida.';
   }
 
-  if (trimmed.pais && !countryOptions.includes(trimmed.pais)) {
+  if (requiredFields.empresa && !trimmed.empresa) {
+    errors.empresa = 'Introduzca su empresa.';
+  }
+
+  if (requiredFields.pais && !trimmed.pais) {
+    errors.pais = 'Seleccione un país.';
+  } else if (trimmed.pais && !countryOptions.includes(trimmed.pais)) {
     errors.pais = 'Seleccione un país válido.';
   }
 
-  if (trimmed.ciudad) {
+  if (requiredFields.ciudad && !trimmed.ciudad) {
+    errors.ciudad = 'Seleccione una ciudad.';
+  } else if (trimmed.ciudad) {
     if (!trimmed.pais) {
-      errors.ciudad = 'Seleccione un país válido.';
+      errors.ciudad = 'Seleccione un país.';
     } else if (!cityOptions.includes(trimmed.ciudad)) {
       errors.ciudad =
         'Seleccione una ciudad válida para el país indicado.';
     }
   }
 
-  if (!trimmed.mensaje) {
-    errors.mensaje = 'La solicitud es obligatoria.';
+  if (requiredFields.mensaje && !trimmed.mensaje) {
+    errors.mensaje = 'Introduzca su solicitud.';
   }
 
   return errors;

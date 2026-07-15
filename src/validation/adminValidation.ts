@@ -1,4 +1,4 @@
-import type { AppConfig, ParameterMapping } from '../types';
+import type { AppConfig, ParameterMapping, RequiredFieldsConfig } from '../types';
 
 const URL_PATTERN = /^https?:\/\/.+/;
 
@@ -11,6 +11,15 @@ export const parameterFieldLabels: Record<ParameterField, string> = {
   pais: 'País',
   ciudad: 'Ciudad',
   mensaje: 'Mensaje',
+};
+
+export const requiredFieldAriaLabels: Record<ParameterField, string> = {
+  nombre: 'Marcar Nombre como obligatorio',
+  email: 'Marcar Email como obligatorio',
+  empresa: 'Marcar Empresa como obligatorio',
+  pais: 'Marcar País como obligatorio',
+  ciudad: 'Marcar Ciudad como obligatoria',
+  mensaje: 'Marcar Mensaje como obligatorio',
 };
 
 export const parameterFieldOrder: ParameterField[] = [
@@ -27,9 +36,18 @@ export type AdminErrors = {
   submitApiUrl?: string;
   submitTimeoutMs?: string;
   parameterMapping?: Partial<Record<ParameterField, string>>;
+  requiredFields?: string;
 };
 
 export function trimAdminConfig(config: AppConfig): AppConfig {
+  const requiredFields: RequiredFieldsConfig = {
+    ...config.requiredFields,
+  };
+
+  if (requiredFields.ciudad) {
+    requiredFields.pais = true;
+  }
+
   return {
     countriesApiUrl: config.countriesApiUrl.trim(),
     submitApiUrl: config.submitApiUrl.trim(),
@@ -42,6 +60,7 @@ export function trimAdminConfig(config: AppConfig): AppConfig {
       ciudad: config.parameterMapping.ciudad.trim(),
       mensaje: config.parameterMapping.mensaje.trim(),
     },
+    requiredFields,
   };
 }
 
@@ -99,6 +118,19 @@ export function validateAdminConfig(config: AppConfig): AdminErrors {
 
   if (Object.keys(parameterMappingErrors).length > 0) {
     errors.parameterMapping = parameterMappingErrors;
+  }
+
+  for (const field of parameterFieldOrder) {
+    if (typeof trimmed.requiredFields[field] !== 'boolean') {
+      errors.requiredFields =
+        'La configuración de campos obligatorios no es válida.';
+      break;
+    }
+  }
+
+  if (trimmed.requiredFields.ciudad && !trimmed.requiredFields.pais) {
+    errors.requiredFields =
+      'País debe ser obligatorio cuando Ciudad es obligatoria.';
   }
 
   return errors;

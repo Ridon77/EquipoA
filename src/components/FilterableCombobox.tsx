@@ -15,7 +15,7 @@ interface FilterableComboboxProps {
   onChange: (value: string) => void;
   placeholder: string;
   disabled?: boolean;
-  optional?: boolean;
+  required?: boolean;
   error?: string;
   inputRef?: RefObject<HTMLInputElement | null>;
   className?: string;
@@ -30,7 +30,7 @@ export function FilterableCombobox({
   onChange,
   placeholder,
   disabled = false,
-  optional = false,
+  required = false,
   error,
   inputRef,
   className = '',
@@ -167,7 +167,14 @@ export function FilterableCombobox({
     >
       <label className="form-label" htmlFor={id}>
         {label}
-        {optional && <span className="form-label__optional">Opcional</span>}
+        {required ? (
+          <span className="form-label__required" aria-hidden="true">
+            {' '}
+            *
+          </span>
+        ) : (
+          <span className="form-label__optional">Opcional</span>
+        )}
       </label>
       <input
         ref={internalInputRef}
@@ -179,7 +186,9 @@ export function FilterableCombobox({
         value={query}
         placeholder={placeholder}
         disabled={disabled}
+        required={required}
         autoComplete="off"
+        aria-required={required || undefined}
         aria-expanded={isOpen}
         aria-controls={listboxId}
         aria-autocomplete="list"

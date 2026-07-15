@@ -20,6 +20,14 @@ const customConfig: AppConfig = {
     ciudad: 'city',
     mensaje: 'request',
   },
+  requiredFields: {
+    nombre: true,
+    email: true,
+    empresa: false,
+    pais: true,
+    ciudad: false,
+    mensaje: true,
+  },
 };
 
 describe('configService', () => {
@@ -59,7 +67,7 @@ describe('configService', () => {
     expect(loadConfig()).toEqual(DEFAULT_CONFIG);
   });
 
-  it('migra configuraciones antiguas sin empresa', () => {
+  it('migra configuraciones antiguas sin empresa ni requiredFields', () => {
     const legacyStored = {
       countriesApiUrl: 'https://legacy.example.com/countries',
       submitApiUrl: 'https://legacy.example.com/submit',
@@ -81,6 +89,7 @@ describe('configService', () => {
         ...legacyStored.parameterMapping,
         empresa: 'empresa',
       },
+      requiredFields: DEFAULT_CONFIG.requiredFields,
     });
   });
 
@@ -97,5 +106,30 @@ describe('configService', () => {
     });
 
     expect(migrated.parameterMapping.empresa).toBe('companyName');
+  });
+
+  it('sustituye requiredFields corruptos por valores predeterminados', () => {
+    const migrated = migrateConfig({
+      requiredFields: {
+        nombre: 'yes',
+        email: false,
+      } as never,
+    });
+
+    expect(migrated.requiredFields.nombre).toBe(true);
+    expect(migrated.requiredFields.email).toBe(false);
+  });
+
+  it('fuerza País obligatorio si Ciudad es obligatoria', () => {
+    const migrated = migrateConfig({
+      requiredFields: {
+        ...DEFAULT_CONFIG.requiredFields,
+        pais: false,
+        ciudad: true,
+      },
+    });
+
+    expect(migrated.requiredFields.ciudad).toBe(true);
+    expect(migrated.requiredFields.pais).toBe(true);
   });
 });

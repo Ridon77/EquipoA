@@ -12,6 +12,14 @@ export const defaultConfig: AppConfig = {
     ciudad: 'ciudad',
     mensaje: 'mensaje',
   },
+  requiredFields: {
+    nombre: true,
+    email: false,
+    empresa: false,
+    pais: false,
+    ciudad: false,
+    mensaje: true,
+  },
 };
 
 export const DEFAULT_CONFIG = defaultConfig;

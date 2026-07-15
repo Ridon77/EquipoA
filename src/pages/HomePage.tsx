@@ -9,6 +9,7 @@ import {
   getCitiesForCountry,
   getCountryDisplayNames,
 } from '../services/countriesService';
+import { loadConfig } from '../services/configService';
 import { submitForm } from '../services/submitService';
 import { buildPublicFormUrl } from '../utils/buildPublicFormUrl';
 import { emptyFormData } from '../types';
@@ -29,6 +30,7 @@ export function HomePage() {
   const [processError, setProcessError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { countries, loading, error, retry } = useCountries();
+  const requiredFields = loadConfig().requiredFields;
 
   const countryOptions = useMemo(
     () => getCountryDisplayNames(countries),
@@ -114,8 +116,10 @@ export function HomePage() {
     }
 
     const trimmed = trimFormData(formData);
+    const currentRequiredFields = loadConfig().requiredFields;
     const validationErrors = validateForm(
       trimmed,
+      currentRequiredFields,
       countryOptions,
       cityOptions,
     );
@@ -177,6 +181,7 @@ export function HomePage() {
         <FormView
           formData={formData}
           errors={errors}
+          requiredFields={requiredFields}
           countries={countries}
           countriesLoading={loading}
           countriesError={error}

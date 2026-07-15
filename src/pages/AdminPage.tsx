@@ -13,6 +13,7 @@ import {
   hasAdminErrors,
   parameterFieldLabels,
   parameterFieldOrder,
+  requiredFieldAriaLabels,
   trimAdminConfig,
   validateAdminConfig,
 } from '../validation';
@@ -75,6 +76,36 @@ export function AdminPage() {
     }
   };
 
+  const handleRequiredFieldChange = (
+    field: ParameterField,
+    checked: boolean,
+  ) => {
+    setConfig((current) => {
+      const requiredFields = {
+        ...current.requiredFields,
+        [field]: checked,
+      };
+
+      if (field === 'ciudad' && checked) {
+        requiredFields.pais = true;
+      }
+
+      if (field === 'pais' && !checked && requiredFields.ciudad) {
+        return current;
+      }
+
+      return {
+        ...current,
+        requiredFields,
+      };
+    });
+    setSuccessMessage(null);
+
+    if (errors.requiredFields) {
+      setErrors((current) => ({ ...current, requiredFields: undefined }));
+    }
+  };
+
   const handleSave = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -110,12 +141,15 @@ export function AdminPage() {
   const getParameterError = (field: ParameterField): string | undefined =>
     errors.parameterMapping?.[field];
 
+  const isCountryRequiredLocked = config.requiredFields.ciudad;
+
   return (
     <>
       <header className="admin-header">
         <h1 className="admin-header__title">Administración</h1>
         <p className="admin-header__description">
-          Configure los servicios externos y el mapeo de parámetros de envío.
+          Configure los servicios externos, el mapeo de parámetros y los campos
+          obligatorios del formulario.
         </p>
       </header>
 
@@ -129,6 +163,12 @@ export function AdminPage() {
         {successMessage && (
           <div className="status-panel status-panel--success" role="status" aria-live="polite">
             {successMessage}
+          </div>
+        )}
+
+        {errors.requiredFields && (
+          <div className="status-panel status-panel--error" role="alert">
+            {errors.requiredFields}
           </div>
         )}
 
@@ -216,7 +256,8 @@ export function AdminPage() {
           <section className="admin-section">
             <h2 className="admin-section__title">Mapeo de parámetros</h2>
             <p className="admin-section__description">
-              Asocie cada campo del formulario con el nombre del parámetro en la API.
+              Asocie cada campo del formulario con el nombre del parámetro en la API
+              y defina si es obligatorio.
             </p>
 
             <div className="table-wrapper">
@@ -225,6 +266,7 @@ export function AdminPage() {
                   <tr>
                     <th>Campo del formulario</th>
                     <th>Nombre del parámetro API</th>
+                    <th>Obligatorio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,6 +291,31 @@ export function AdminPage() {
                         {getParameterError(field) && (
                           <p className="form-error" role="alert">
                             {getParameterError(field)}
+                          </p>
+                        )}
+                      </td>
+                      <td className="data-table__checkbox-cell">
+                        <label className="admin-checkbox">
+                          <input
+                            id={`required-${field}`}
+                            name={`required-${field}`}
+                            type="checkbox"
+                            checked={config.requiredFields[field]}
+                            disabled={field === 'pais' && isCountryRequiredLocked}
+                            aria-label={requiredFieldAriaLabels[field]}
+                            onChange={(event) =>
+                              handleRequiredFieldChange(
+                                field,
+                                event.target.checked,
+                              )
+                            }
+                          />
+                          <span aria-hidden="true">Obligatorio</span>
+                        </label>
+                        {field === 'pais' && isCountryRequiredLocked && (
+                          <p className="form-help">
+                            País es obligatorio porque Ciudad depende de un país
+                            seleccionado.
                           </p>
                         )}
                       </td>

@@ -12,6 +12,8 @@ export interface CountryCitySelectorProps {
   onCityChange: (cityDisplayName: string) => void;
   countryError?: string;
   cityError?: string;
+  countryRequired?: boolean;
+  cityRequired?: boolean;
   disabled?: boolean;
   countryRef?: RefObject<HTMLInputElement | null>;
   cityRef?: RefObject<HTMLInputElement | null>;
@@ -25,6 +27,8 @@ export function CountryCitySelector({
   onCityChange,
   countryError,
   cityError,
+  countryRequired = false,
+  cityRequired = false,
   disabled = false,
   countryRef,
   cityRef,
@@ -64,7 +68,7 @@ export function CountryCitySelector({
         onChange={onCountryChange}
         placeholder="Escribe para buscar un país"
         disabled={disabled}
-        optional
+        required={countryRequired}
         error={countryError}
         inputRef={countryRef}
       />
@@ -81,7 +85,7 @@ export function CountryCitySelector({
             : 'Selecciona primero un país'
         }
         disabled={disabled || !hasCountry}
-        optional
+        required={cityRequired}
         error={cityError}
         inputRef={cityRef}
         className="form-field--full"

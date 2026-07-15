@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { CountryCitySelector } from './CountryCitySelector';
 import { ProcessErrorBanner } from './ProcessErrorBanner';
-import type { FormData } from '../types';
+import type { FormData, RequiredFieldsConfig } from '../types';
 import type { CountryOption } from '../types/countries';
 import type { FormErrors } from '../validation';
 import { formFieldOrder } from '../validation';
@@ -10,6 +10,7 @@ import { formFieldOrder } from '../validation';
 interface FormViewProps {
   formData: FormData;
   errors: FormErrors;
+  requiredFields: RequiredFieldsConfig;
   countries: CountryOption[];
   countriesLoading: boolean;
   countriesError: string | null;
@@ -20,9 +21,34 @@ interface FormViewProps {
   processError?: string;
 }
 
+function FieldLabel({
+  htmlFor,
+  children,
+  required,
+}: {
+  htmlFor: string;
+  children: ReactNode;
+  required: boolean;
+}) {
+  return (
+    <label className="form-label" htmlFor={htmlFor}>
+      {children}
+      {required ? (
+        <span className="form-label__required" aria-hidden="true">
+          {' '}
+          *
+        </span>
+      ) : (
+        <span className="form-label__optional">Opcional</span>
+      )}
+    </label>
+  );
+}
+
 export function FormView({
   formData,
   errors,
+  requiredFields,
   countries,
   countriesLoading,
   countriesError,
@@ -67,6 +93,10 @@ export function FormView({
     <form className="form-layout" onSubmit={handleSubmit} noValidate>
       {processError && <ProcessErrorBanner message={processError} />}
 
+      <p className="form-help form-required-legend">
+        Los campos marcados con * son obligatorios.
+      </p>
+
       {countriesLoading && (
         <span className="loading-inline" role="status" aria-live="polite">
           <span className="spinner" aria-hidden="true" />
@@ -93,9 +123,9 @@ export function FormView({
 
       <div className="form-grid">
         <div className="form-field">
-          <label className="form-label" htmlFor="nombre">
-            Introduzca su nombre
-          </label>
+          <FieldLabel htmlFor="nombre" required={requiredFields.nombre}>
+            Nombre
+          </FieldLabel>
           <input
             ref={fieldRefs.nombre}
             id="nombre"
@@ -103,6 +133,8 @@ export function FormView({
             type="text"
             className="form-control"
             value={formData.nombre}
+            required={requiredFields.nombre}
+            aria-required={requiredFields.nombre || undefined}
             onChange={(event) => onChange('nombre', event.target.value)}
             aria-invalid={errors.nombre ? true : undefined}
             aria-describedby={errors.nombre ? 'nombre-error' : undefined}
@@ -115,10 +147,9 @@ export function FormView({
         </div>
 
         <div className="form-field">
-          <label className="form-label" htmlFor="email">
-            Introduzca su email
-            <span className="form-label__optional">Opcional</span>
-          </label>
+          <FieldLabel htmlFor="email" required={requiredFields.email}>
+            Email
+          </FieldLabel>
           <input
             ref={fieldRefs.email}
             id="email"
@@ -126,6 +157,8 @@ export function FormView({
             type="email"
             className="form-control"
             value={formData.email}
+            required={requiredFields.email}
+            aria-required={requiredFields.email || undefined}
             onChange={(event) => onChange('email', event.target.value)}
             aria-invalid={errors.email ? true : undefined}
             aria-describedby={errors.email ? 'email-error' : undefined}
@@ -138,10 +171,9 @@ export function FormView({
         </div>
 
         <div className="form-field">
-          <label className="form-label" htmlFor="empresa">
-            Introduzca su empresa
-            <span className="form-label__optional">Opcional</span>
-          </label>
+          <FieldLabel htmlFor="empresa" required={requiredFields.empresa}>
+            Empresa
+          </FieldLabel>
           <input
             ref={fieldRefs.empresa}
             id="empresa"
@@ -149,8 +181,17 @@ export function FormView({
             type="text"
             className="form-control"
             value={formData.empresa}
+            required={requiredFields.empresa}
+            aria-required={requiredFields.empresa || undefined}
             onChange={(event) => onChange('empresa', event.target.value)}
+            aria-invalid={errors.empresa ? true : undefined}
+            aria-describedby={errors.empresa ? 'empresa-error' : undefined}
           />
+          {errors.empresa && (
+            <p id="empresa-error" className="form-error" role="alert">
+              {errors.empresa}
+            </p>
+          )}
         </div>
 
         <CountryCitySelector
@@ -161,15 +202,17 @@ export function FormView({
           onCityChange={handleCityChange}
           countryError={errors.pais}
           cityError={errors.ciudad}
+          countryRequired={requiredFields.pais}
+          cityRequired={requiredFields.ciudad}
           disabled={countriesLoading}
           countryRef={fieldRefs.pais}
           cityRef={fieldRefs.ciudad}
         />
 
         <div className="form-field form-field--full">
-          <label className="form-label" htmlFor="mensaje">
-            Introduzca su solicitud
-          </label>
+          <FieldLabel htmlFor="mensaje" required={requiredFields.mensaje}>
+            Solicitud
+          </FieldLabel>
           <textarea
             ref={fieldRefs.mensaje}
             id="mensaje"
@@ -177,6 +220,8 @@ export function FormView({
             className="form-textarea"
             rows={4}
             value={formData.mensaje}
+            required={requiredFields.mensaje}
+            aria-required={requiredFields.mensaje || undefined}
             onChange={(event) => onChange('mensaje', event.target.value)}
             aria-invalid={errors.mensaje ? true : undefined}
             aria-describedby={errors.mensaje ? 'mensaje-error' : undefined}

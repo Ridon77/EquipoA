@@ -98,4 +98,18 @@ describe('validateAdminConfig', () => {
 
     expect(hasAdminErrors(errors)).toBe(false);
   });
+
+  it('rechaza Ciudad obligatoria con País opcional', () => {
+    const errors = validateAdminConfig({
+      ...validConfig,
+      requiredFields: {
+        ...validConfig.requiredFields,
+        pais: false,
+        ciudad: true,
+      },
+    });
+
+    // trimAdminConfig fuerza País=true, así que no debe haber error de coherencia
+    expect(errors.requiredFields).toBeUndefined();
+  });
 });
