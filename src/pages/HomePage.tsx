@@ -14,7 +14,11 @@ import {
 import { loadConfig } from '../services/configService';
 import { submitForm } from '../services/submitService';
 import { buildPublicFormQrUrl } from '../utils/buildPublicFormUrl';
-import { applyQrFormConfig, isQrAccess } from '../utils/qrAccess';
+import {
+  applyQrFormConfig,
+  isQrAccess,
+  shouldApplyQrFormConfig,
+} from '../utils/qrAccess';
 import { emptyFormData } from '../types';
 import type { FormData, RequiredFieldsConfig, ViewState } from '../types';
 import {
@@ -37,22 +41,25 @@ export function HomePage() {
   const [requiredFields, setRequiredFields] = useState<RequiredFieldsConfig>(
     () => loadConfig().requiredFields,
   );
-  const [isConfigInitializing, setIsConfigInitializing] = useState(() =>
-    isQrAccess(location.search),
-  );
+  const [isConfigInitializing, setIsConfigInitializing] = useState(true);
   const { countries, loading, error, retry } = useCountries();
 
   useLayoutEffect(() => {
-    if (!isQrAccess(location.search)) {
-      setIsConfigInitializing(false);
-      return;
+    const qrAccess = isQrAccess(location.search);
+    const storedConfig = loadConfig();
+
+    if (shouldApplyQrFormConfig(storedConfig, qrAccess)) {
+      applyQrFormConfig();
+      setRequiredFields(QR_FORM_CONFIG.requiredFields);
+      retry();
+      if (qrAccess) {
+        navigate('/', { replace: true });
+      }
+    } else {
+      setRequiredFields(storedConfig.requiredFields);
     }
 
-    applyQrFormConfig();
-    setRequiredFields(QR_FORM_CONFIG.requiredFields);
-    retry();
     setIsConfigInitializing(false);
-    navigate('/', { replace: true });
   }, [location.search, navigate, retry]);
 
   const countryOptions = useMemo(

@@ -50,16 +50,28 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/^Solicitud/i), 'Necesito ayuda');
 }
 
+const VALID_TEST_CONFIG = {
+  ...DEFAULT_CONFIG,
+  submitApiUrl: 'https://admin-config.example/webhook',
+};
+
+async function waitForForm() {
+  expect(
+    await screen.findByLabelText(/^Empresa/i),
+  ).toBeInTheDocument();
+}
+
 describe('HomePage', () => {
   beforeEach(() => {
     localStorage.clear();
+    saveConfig(VALID_TEST_CONFIG);
+    mockRetryCountries.mockClear();
     vi.mocked(submitForm).mockReset();
   });
 
-  it('muestra el campo Empresa con su literal', () => {
+  it('muestra el campo Empresa con su literal', async () => {
     renderHomePage();
-
-    expect(screen.getByLabelText(/^Empresa/i)).toBeInTheDocument();
+    await waitForForm();
   });
 
   it('permite enviar con empresa vacía', async () => {
@@ -68,6 +80,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -80,6 +93,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
 
     await user.type(screen.getByLabelText(/^Nombre/i), 'Joan');
     await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
@@ -100,6 +114,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
     await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
@@ -119,6 +134,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -133,6 +149,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
     await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
@@ -150,6 +167,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
     await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
@@ -167,6 +185,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -178,8 +197,9 @@ describe('HomePage', () => {
     ).toBeInTheDocument();
   });
 
-  it('muestra el botón QR en el formulario', () => {
+  it('muestra el botón QR en el formulario', async () => {
     renderHomePage();
+    await waitForForm();
 
     const qrButton = screen.getByRole('button', {
       name: 'Mostrar código QR del formulario',
@@ -192,6 +212,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
 
     await user.type(screen.getByLabelText(/^Nombre/i), 'Joan');
     await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
@@ -222,6 +243,7 @@ describe('HomePage', () => {
     const user = userEvent.setup();
 
     renderHomePage();
+    await waitForForm();
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -259,13 +281,72 @@ describe('HomePage', () => {
     );
   });
 
-  it('no aplica el preset QR en un acceso normal', () => {
+  it('aplica QR_FORM_CONFIG si submitApiUrl está vacía en acceso normal', async () => {
+    saveConfig({
+      ...DEFAULT_CONFIG,
+      submitApiUrl: '',
+      requiredFields: {
+        ...DEFAULT_CONFIG.requiredFields,
+        email: false,
+      },
+    });
+
+    renderHomePage('/');
+
+    await waitFor(() => {
+      expect(loadConfig()).toEqual(QR_FORM_CONFIG);
+    });
+
+    expect(screen.getByLabelText(/^Email/i)).toBeRequired();
+    expect(
+      screen.queryByText('Preparando el formulario...'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('aplica el preset si no hay configuración guardada', async () => {
+    localStorage.clear();
+
+    renderHomePage('/');
+
+    await waitFor(() => {
+      expect(loadConfig()).toEqual(QR_FORM_CONFIG);
+    });
+
+    expect(screen.getByLabelText(/^Email/i)).toBeRequired();
+  });
+
+  it('conserva configuración personalizada válida en acceso normal', async () => {
+    const custom = {
+      ...DEFAULT_CONFIG,
+      submitApiUrl: 'https://custom.example/webhook',
+      parameterMapping: {
+        ...DEFAULT_CONFIG.parameterMapping,
+        nombre: 'CustomName',
+      },
+      requiredFields: {
+        ...DEFAULT_CONFIG.requiredFields,
+        email: true,
+        empresa: true,
+      },
+    };
+    saveConfig(custom);
+
+    renderHomePage('/');
+    await waitForForm();
+
+    expect(loadConfig()).toEqual(custom);
+    expect(screen.getByLabelText(/^Email/i)).toBeRequired();
+    expect(screen.getByLabelText(/^Empresa/i)).toBeRequired();
+  });
+
+  it('no aplica el preset QR en un acceso normal con URL válida', async () => {
     saveConfig({
       ...DEFAULT_CONFIG,
       submitApiUrl: 'https://admin-config.example/webhook',
     });
 
     renderHomePage('/');
+    await waitForForm();
 
     expect(loadConfig().submitApiUrl).toBe(
       'https://admin-config.example/webhook',

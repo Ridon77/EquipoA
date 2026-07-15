@@ -146,7 +146,11 @@ Por eso, al abrir el formulario con `source=qr`:
 4. Elimina `source=qr` de la URL (`replace`) para dejar una ruta limpia.
 5. Un nuevo escaneo vuelve a aplicar el mismo preset.
 
-Un acceso normal (`#/`) **no** sobrescribe la configuración: usa la de `localStorage` o `DEFAULT_CONFIG`.
+Además, si en un acceso normal la URL de la API de envío está vacía (o ausente / solo espacios), la aplicación aplica automáticamente `QR_FORM_CONFIG` y la guarda en `localStorage`. Así se evitan errores de conexión en navegadores nuevos o móviles que aún no tienen webhook configurado.
+
+Un acceso normal con `submitApiUrl` válida **conserva** la configuración personalizada (mapeo, obligatoriedad, etc.).
+
+El acceso QR **siempre** sobrescribe, aunque ya exista una URL válida.
 
 Preset actual (editable en `src/config/qrFormConfig.ts`):
 

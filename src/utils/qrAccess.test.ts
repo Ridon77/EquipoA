@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
 import { QR_FORM_CONFIG } from '../config/qrFormConfig';
 import { loadConfig, saveConfig } from '../services/configService';
-import { applyQrFormConfig, isQrAccess } from './qrAccess';
+import type { AppConfig } from '../types';
+import {
+  applyQrFormConfig,
+  isQrAccess,
+  shouldApplyQrFormConfig,
+} from './qrAccess';
 
 describe('isQrAccess', () => {
   it('detecta source=qr', () => {
@@ -14,6 +19,56 @@ describe('isQrAccess', () => {
     expect(isQrAccess('')).toBe(false);
     expect(isQrAccess('?')).toBe(false);
     expect(isQrAccess('?source=manual')).toBe(false);
+  });
+});
+
+describe('shouldApplyQrFormConfig', () => {
+  const withUrl = {
+    ...DEFAULT_CONFIG,
+    submitApiUrl: 'https://ejemplo.example/webhook',
+  };
+
+  it('aplica con acceso QR aunque la URL esté informada', () => {
+    expect(shouldApplyQrFormConfig(withUrl, true)).toBe(true);
+  });
+
+  it('aplica con submitApiUrl vacía', () => {
+    expect(
+      shouldApplyQrFormConfig({ ...DEFAULT_CONFIG, submitApiUrl: '' }, false),
+    ).toBe(true);
+  });
+
+  it('aplica con submitApiUrl solo espacios', () => {
+    expect(
+      shouldApplyQrFormConfig(
+        { ...DEFAULT_CONFIG, submitApiUrl: '   ' },
+        false,
+      ),
+    ).toBe(true);
+  });
+
+  it('aplica con submitApiUrl undefined', () => {
+    expect(shouldApplyQrFormConfig(undefined, false)).toBe(true);
+    expect(
+      shouldApplyQrFormConfig(
+        { ...DEFAULT_CONFIG, submitApiUrl: undefined } as unknown as AppConfig,
+        false,
+      ),
+    ).toBe(true);
+  });
+
+  it('aplica con submitApiUrl null', () => {
+    expect(shouldApplyQrFormConfig(null, false)).toBe(true);
+    expect(
+      shouldApplyQrFormConfig(
+        { ...DEFAULT_CONFIG, submitApiUrl: null } as unknown as AppConfig,
+        false,
+      ),
+    ).toBe(true);
+  });
+
+  it('conserva la configuración con URL válida en acceso normal', () => {
+    expect(shouldApplyQrFormConfig(withUrl, false)).toBe(false);
   });
 });
 
