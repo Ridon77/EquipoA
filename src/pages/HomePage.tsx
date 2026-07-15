@@ -5,7 +5,10 @@ import { QrTriggerIcon } from '../components/QrIcons';
 import { SuccessView } from '../components/SuccessView';
 import { TechnicalErrorView } from '../components/TechnicalErrorView';
 import { useCountries } from '../hooks/useCountries';
-import { getCitiesForCountry } from '../services/countriesService';
+import {
+  getCitiesForCountry,
+  getCountryDisplayNames,
+} from '../services/countriesService';
 import { submitForm } from '../services/submitService';
 import { buildPublicFormUrl } from '../utils/buildPublicFormUrl';
 import { emptyFormData } from '../types';
@@ -28,12 +31,12 @@ export function HomePage() {
   const { countries, loading, error, retry } = useCountries();
 
   const countryOptions = useMemo(
-    () => countries.map((entry) => entry.country),
+    () => getCountryDisplayNames(countries),
     [countries],
   );
 
   const cityOptions = useMemo(
-    () => getCitiesForCountry(countries, formData.pais.trim()),
+    () => getCitiesForCountry(countries, formData.pais),
     [countries, formData.pais],
   );
 
@@ -55,6 +58,16 @@ export function HomePage() {
 
       return { ...current, [field]: value };
     });
+
+    if (field === 'pais') {
+      setErrors((current) => {
+        const next = { ...current };
+        delete next.pais;
+        delete next.ciudad;
+        return next;
+      });
+      return;
+    }
 
     if (errors[field]) {
       setErrors((current) => {
@@ -164,8 +177,7 @@ export function HomePage() {
         <FormView
           formData={formData}
           errors={errors}
-          countryOptions={countryOptions}
-          cityOptions={cityOptions}
+          countries={countries}
           countriesLoading={loading}
           countriesError={error}
           onRetryCountries={retry}

@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react';
 import type { FormEvent } from 'react';
+import { CountryCitySelector } from './CountryCitySelector';
 import { ProcessErrorBanner } from './ProcessErrorBanner';
-import { SearchableSelect } from './SearchableSelect';
 import type { FormData } from '../types';
+import type { CountryOption } from '../types/countries';
 import type { FormErrors } from '../validation';
 import { formFieldOrder } from '../validation';
 
 interface FormViewProps {
   formData: FormData;
   errors: FormErrors;
-  countryOptions: string[];
-  cityOptions: string[];
+  countries: CountryOption[];
   countriesLoading: boolean;
   countriesError: string | null;
   onRetryCountries: () => void;
@@ -23,8 +23,7 @@ interface FormViewProps {
 export function FormView({
   formData,
   errors,
-  countryOptions,
-  cityOptions,
+  countries,
   countriesLoading,
   countriesError,
   onRetryCountries,
@@ -56,6 +55,14 @@ export function FormView({
     onSubmit();
   };
 
+  const handleCountryChange = (countryDisplayName: string) => {
+    onChange('pais', countryDisplayName);
+  };
+
+  const handleCityChange = (cityDisplayName: string) => {
+    onChange('ciudad', cityDisplayName);
+  };
+
   return (
     <form className="form-layout" onSubmit={handleSubmit} noValidate>
       {processError && <ProcessErrorBanner message={processError} />}
@@ -63,12 +70,16 @@ export function FormView({
       {countriesLoading && (
         <span className="loading-inline" role="status" aria-live="polite">
           <span className="spinner" aria-hidden="true" />
-          Cargando países...
+          Cargando países y ciudades...
         </span>
       )}
 
       {countriesError && (
-        <div className="status-panel status-panel--error" role="alert" aria-live="polite">
+        <div
+          className="status-panel status-panel--error"
+          role="alert"
+          aria-live="polite"
+        >
           <p className="form-error">{countriesError}</p>
           <button
             type="button"
@@ -142,29 +153,17 @@ export function FormView({
           />
         </div>
 
-        <SearchableSelect
-          id="pais"
-          label="Introduzca su país"
-          value={formData.pais}
-          options={countryOptions}
-          onChange={(value) => onChange('pais', value)}
+        <CountryCitySelector
+          countries={countries}
+          countryValue={formData.pais}
+          cityValue={formData.ciudad}
+          onCountryChange={handleCountryChange}
+          onCityChange={handleCityChange}
+          countryError={errors.pais}
+          cityError={errors.ciudad}
           disabled={countriesLoading}
-          optional
-          error={errors.pais}
-          inputRef={fieldRefs.pais}
-        />
-
-        <SearchableSelect
-          id="ciudad"
-          label="Introduzca su ciudad"
-          value={formData.ciudad}
-          options={cityOptions}
-          onChange={(value) => onChange('ciudad', value)}
-          disabled={countriesLoading || formData.pais.trim() === ''}
-          optional
-          error={errors.ciudad}
-          inputRef={fieldRefs.ciudad}
-          className="form-field--full"
+          countryRef={fieldRefs.pais}
+          cityRef={fieldRefs.ciudad}
         />
 
         <div className="form-field form-field--full">

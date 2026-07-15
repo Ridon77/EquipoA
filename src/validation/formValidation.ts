@@ -43,14 +43,15 @@ export function validateForm(
   }
 
   if (trimmed.pais && !countryOptions.includes(trimmed.pais)) {
-    errors.pais = 'El país seleccionado no es válido.';
+    errors.pais = 'Seleccione un país válido.';
   }
 
   if (trimmed.ciudad) {
     if (!trimmed.pais) {
-      errors.ciudad = 'Debe seleccionar un país antes de indicar la ciudad.';
+      errors.ciudad = 'Seleccione un país válido.';
     } else if (!cityOptions.includes(trimmed.ciudad)) {
-      errors.ciudad = 'La ciudad seleccionada no es válida para el país indicado.';
+      errors.ciudad =
+        'Seleccione una ciudad válida para el país indicado.';
     }
   }
 

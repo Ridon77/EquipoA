@@ -5,7 +5,14 @@ import { HomePage } from './HomePage';
 
 vi.mock('../hooks/useCountries', () => ({
   useCountries: () => ({
-    countries: [{ country: 'Spain', cities: ['Madrid'] }],
+    countries: [
+      {
+        iso2: 'ES',
+        originalName: 'Spain',
+        displayName: 'España',
+        cities: [{ originalName: 'Madrid', displayName: 'Madrid' }],
+      },
+    ],
     loading: false,
     error: null,
     retry: vi.fn(),

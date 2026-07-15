@@ -12,7 +12,7 @@ const baseForm: FormData = {
   mensaje: 'Solicitud de prueba',
 };
 
-const countries = ['Spain', 'France'];
+const countries = ['España', 'Francia'];
 const citiesForSpain = ['Madrid', 'Barcelona'];
 
 describe('validateForm', () => {
@@ -68,13 +68,13 @@ describe('validateForm', () => {
 
   it('rechaza ciudad incompatible con el país', () => {
     const errors = validateForm(
-      { ...baseForm, pais: 'Spain', ciudad: 'Paris' },
+      { ...baseForm, pais: 'España', ciudad: 'París' },
       countries,
       citiesForSpain,
     );
 
     expect(errors.ciudad).toBe(
-      'La ciudad seleccionada no es válida para el país indicado.',
+      'Seleccione una ciudad válida para el país indicado.',
     );
   });
 
@@ -85,7 +85,7 @@ describe('validateForm', () => {
       citiesForSpain,
     );
 
-    expect(errors.pais).toBe('El país seleccionado no es válido.');
+    expect(errors.pais).toBe('Seleccione un país válido.');
   });
 });
 

@@ -86,11 +86,32 @@ En GitHub Pages las rutas usan hash:
 | Nombre | Sí | Introduzca su nombre |
 | Email | No | Introduzca su email |
 | Empresa | No | Introduzca su empresa |
-| País | No | Introduzca su país |
-| Ciudad | No | Introduzca su ciudad |
+| País | No | País (desplegable en castellano) |
+| Ciudad | No | Ciudad (dependiente del país) |
 | Mensaje | Sí | Introduzca su solicitud |
 
 El campo **Empresa** es opcional, admite texto libre y se envía a la API con el parámetro configurado (predeterminado: `empresa`).
+
+## País y ciudad en castellano
+
+Los campos **País** y **Ciudad** son buscadores dependientes:
+
+1. Escribe en País para filtrar (coincide en cualquier parte del nombre; por ejemplo, `aña` → España).
+2. Ciudad permanece deshabilitada hasta elegir un país válido.
+3. Ciudad solo muestra y filtra las ciudades del país seleccionado.
+
+### Traducción
+
+- **Países:** se traducen con `Intl.DisplayNames` (`es`) a partir del código ISO2 (por ejemplo, `DE` → Alemania).
+- **Ciudades:** se traduce un diccionario conocido en `src/data/cityTranslationsEs.ts` (por ejemplo, Munich → Múnich).
+- Si una ciudad no tiene traducción, se mantiene el nombre original.
+- Ambas listas se ordenan alfabéticamente con reglas españolas.
+
+El valor enviado por REST sigue siendo el **nombre visible** (`pais` y `ciudad`), no el ISO2. El mapeo se configura desde `/admin`.
+
+La URL de la API se lee de `countriesApiUrl` (configurable en `/admin`). Los datos se cargan en una sola petición y se reutilizan al cambiar de país.
+
+**Limitación:** no todas las ciudades tienen traducción al castellano. Para ampliar el diccionario, edita `src/data/cityTranslationsEs.ts` añadiendo pares `nombreOriginal: "Traducción"`.
 
 ## Código QR del formulario
 
