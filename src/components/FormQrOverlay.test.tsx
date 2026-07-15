@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FormQrOverlay } from './FormQrOverlay';
 
-const FORM_URL = 'https://example.com/EquipoA/#/';
+const FORM_URL = 'https://example.com/EquipoA/#/?source=qr';
 
 describe('FormQrOverlay', () => {
   afterEach(() => {

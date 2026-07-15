@@ -13,7 +13,9 @@ export function buildSubmitUrl(
   formData: FormData,
   mapping: ParameterMapping,
 ): string {
-  const url = new URL(baseUrl);
+  // Evita ?? cuando la URL base ya termina en '?'.
+  const normalizedBase = baseUrl.trim().replace(/\?+$/, '');
+  const url = new URL(normalizedBase);
 
   url.searchParams.set(mapping.nombre, formData.nombre);
   url.searchParams.set(mapping.email, formData.email);

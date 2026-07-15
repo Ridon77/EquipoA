@@ -54,6 +54,28 @@ describe('buildSubmitUrl', () => {
     expect(url).toContain('customerMessage=Solicitud+con+espacios');
   });
 
+  it('no genera ?? cuando la URL base termina en ?', () => {
+    const url = buildSubmitUrl(
+      'https://santisola.app.n8n.cloud/webhook/lead?',
+      formData,
+      {
+        nombre: 'Nombre',
+        email: 'Email',
+        empresa: 'Empresa',
+        pais: 'Pais',
+        ciudad: 'Ciudad',
+        mensaje: 'Mensaje',
+      },
+    );
+
+    expect(url).not.toContain('??');
+    expect(url.startsWith('https://santisola.app.n8n.cloud/webhook/lead?')).toBe(
+      true,
+    );
+    expect(url).toContain('Nombre=');
+    expect(url).toContain('Pais=');
+  });
+
   it('codifica arrobas', () => {
     const url = buildSubmitUrl(
       testConfig.submitApiUrl,

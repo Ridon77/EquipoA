@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FormQrOverlay } from '../components/FormQrOverlay';
 import { FormView } from '../components/FormView';
 import { QrTriggerIcon } from '../components/QrIcons';
 import { SuccessView } from '../components/SuccessView';
 import { TechnicalErrorView } from '../components/TechnicalErrorView';
+import { QR_FORM_CONFIG } from '../config/qrFormConfig';
 import { useCountries } from '../hooks/useCountries';
 import {
   getCitiesForCountry,
@@ -11,9 +13,10 @@ import {
 } from '../services/countriesService';
 import { loadConfig } from '../services/configService';
 import { submitForm } from '../services/submitService';
-import { buildPublicFormUrl } from '../utils/buildPublicFormUrl';
+import { buildPublicFormQrUrl } from '../utils/buildPublicFormUrl';
+import { applyQrFormConfig, isQrAccess } from '../utils/qrAccess';
 import { emptyFormData } from '../types';
-import type { FormData, ViewState } from '../types';
+import type { FormData, RequiredFieldsConfig, ViewState } from '../types';
 import {
   hasFormErrors,
   trimFormData,
@@ -22,6 +25,8 @@ import {
 import type { FormErrors } from '../validation';
 
 export function HomePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const qrTriggerRef = useRef<HTMLButtonElement>(null);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [viewState, setViewState] = useState<ViewState>('form');
@@ -29,8 +34,26 @@ export function HomePage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [processError, setProcessError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requiredFields, setRequiredFields] = useState<RequiredFieldsConfig>(
+    () => loadConfig().requiredFields,
+  );
+  const [isConfigInitializing, setIsConfigInitializing] = useState(() =>
+    isQrAccess(location.search),
+  );
   const { countries, loading, error, retry } = useCountries();
-  const requiredFields = loadConfig().requiredFields;
+
+  useLayoutEffect(() => {
+    if (!isQrAccess(location.search)) {
+      setIsConfigInitializing(false);
+      return;
+    }
+
+    applyQrFormConfig();
+    setRequiredFields(QR_FORM_CONFIG.requiredFields);
+    retry();
+    setIsConfigInitializing(false);
+    navigate('/', { replace: true });
+  }, [location.search, navigate, retry]);
 
   const countryOptions = useMemo(
     () => getCountryDisplayNames(countries),
@@ -43,7 +66,8 @@ export function HomePage() {
   );
 
   const publicFormUrl = useMemo(
-    () => buildPublicFormUrl(window.location.origin, import.meta.env.BASE_URL),
+    () =>
+      buildPublicFormQrUrl(window.location.origin, import.meta.env.BASE_URL),
     [],
   );
 
@@ -125,6 +149,7 @@ export function HomePage() {
     );
 
     setFormData(trimmed);
+    setRequiredFields(currentRequiredFields);
 
     if (hasFormErrors(validationErrors)) {
       setErrors(validationErrors);
@@ -145,6 +170,17 @@ export function HomePage() {
   const handleBackToForm = () => {
     setViewState('form');
   };
+
+  if (isConfigInitializing) {
+    return (
+      <section className="surface-card">
+        <span className="loading-inline" role="status" aria-live="polite">
+          <span className="spinner" aria-hidden="true" />
+          Preparando el formulario...
+        </span>
+      </section>
+    );
+  }
 
   if (viewState === 'success') {
     return <SuccessView onNewRequest={handleNewRequest} />;

@@ -15,6 +15,7 @@ function normalizeOrigin(origin: string): string {
   return origin.replace(/\/+$/, '');
 }
 
+/** URL pública del formulario sin marcador (acceso normal). */
 export function buildPublicFormUrl(
   origin: string,
   basePath: string,
@@ -26,4 +27,12 @@ export function buildPublicFormUrl(
     : '/';
 
   return `${normalizedOrigin}${pathPrefix}#/`;
+}
+
+/** URL pública del formulario destinada al código QR (`source=qr`). */
+export function buildPublicFormQrUrl(
+  origin: string,
+  basePath: string,
+): string {
+  return `${buildPublicFormUrl(origin, basePath)}?source=qr`;
 }

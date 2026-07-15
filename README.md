@@ -130,17 +130,46 @@ En la página principal hay un botón con icono QR junto al título del formular
 Al pulsarlo:
 
 - Se abre una vista a pantalla completa con un código QR grande.
-- El QR apunta a la URL pública del formulario (`#/`), calculada automáticamente.
+- El QR apunta a la URL pública del formulario con el marcador `source=qr` (por ejemplo `#/?source=qr`).
 - Debajo aparece un enlace **Abrir formulario** y un botón **Volver al formulario**.
 - Al cerrar, los datos introducidos se conservan sin recargar la página.
 
-La URL se construye con `window.location.origin` e `import.meta.env.BASE_URL`, por lo que funciona en:
+### Acceso mediante QR (`source=qr`)
 
-- Desarrollo local (`http://localhost:5173/#/`)
+Cada navegador y dispositivo tiene su propio `localStorage`. Si alguien escanea el QR en un móvil nuevo, no tendría la configuración de `/admin` del administrador.
+
+Por eso, al abrir el formulario con `source=qr`:
+
+1. La app detecta el marcador.
+2. Sobrescribe `localStorage` con el preset `QR_FORM_CONFIG`.
+3. Aplica de inmediato API de países, webhook de envío, mapeo y obligatoriedad.
+4. Elimina `source=qr` de la URL (`replace`) para dejar una ruta limpia.
+5. Un nuevo escaneo vuelve a aplicar el mismo preset.
+
+Un acceso normal (`#/`) **no** sobrescribe la configuración: usa la de `localStorage` o `DEFAULT_CONFIG`.
+
+Preset actual (editable en `src/config/qrFormConfig.ts`):
+
+| Campo | Parámetro REST | Obligatorio |
+|---|---|---|
+| Nombre | `Nombre` | Sí |
+| Email | `Email` | Sí |
+| Empresa | `Empresa` | No |
+| País | `Pais` | No |
+| Ciudad | `Ciudad` | No |
+| Mensaje | `Mensaje` | Sí |
+
+Webhook de envío del preset: `https://santisola.app.n8n.cloud/webhook/lead?`
+
+**Advertencia:** esa URL de webhook es pública en el frontend (no es un secreto). Cualquiera que escanee el QR o inspeccione el código puede verla.
+
+La URL del QR se construye con `window.location.origin` e `import.meta.env.BASE_URL`, por lo que funciona en:
+
+- Desarrollo local (`http://localhost:5173/#/?source=qr`)
 - Vista previa de Vite
-- GitHub Pages con subruta (`https://dominio/ruta-base/#/`)
+- GitHub Pages con subruta (`https://dominio/ruta-base/#/?source=qr`)
 
-El QR **no contiene datos del formulario**, credenciales ni rutas administrativas. Solo la URL pública de acceso.
+El QR **no contiene datos del formulario**, credenciales ni rutas administrativas. Solo la URL pública y `source=qr`.
 
 Dependencia utilizada: [`qrcode.react`](https://www.npmjs.com/package/qrcode.react) (generación local en SVG).
 
@@ -152,20 +181,11 @@ Dependencia utilizada: [`qrcode.react`](https://www.npmjs.com/package/qrcode.rea
 npm run dev
 ```
 
-Abre el formulario, pulsa el icono QR y escanea el código con un móvil en la misma red o copia el enlace visible.
+Abre el formulario, pulsa el icono QR y escanea el código, o visita directamente `#/?source=qr`.
 
 **Producción:**
 
-Publica la aplicación y abre la URL pública del formulario. El QR generado debe apuntar a la misma URL base con `#/`.
-
-**Simular GitHub Pages en local:**
-
-```bash
-VITE_BASE_PATH=/EquipoA/ npm run build
-npm run preview
-```
-
-El QR debe incluir la subruta configurada en `VITE_BASE_PATH`.
+Publica la aplicación y usa el QR generado desde la página pública. Tras escanear, `#/admin` debe mostrar los valores del preset.
 
 ## Página de administración (`/admin`)
 
