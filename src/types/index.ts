@@ -34,7 +34,12 @@ export interface AppConfig {
 }
 
 export type ApiResult =
-  | { kind: 'success' }
+  | {
+      kind: 'success';
+      message: string;
+      advisorName: string;
+      advisorEmail: string;
+    }
   | { kind: 'processError'; message: string }
   | {
       kind: 'validationError';

@@ -261,6 +261,26 @@ https://ridon77.app.n8n.cloud/webhook/lead?customerName=Joan&customerEmail=joan%
 
 Los nombres de parámetro dependen del mapeo configurado en `/admin`. Los campos opcionales vacíos también se incluyen.
 
+Cuando el webhook responde con éxito (`ok: true`), la aplicación muestra una página de confirmación con el mensaje, el asesor (`Asesor`) y el correo (`email_asesor`) si son válidos.
+
+```json
+{
+  "ok": true,
+  "mensaje": "Lead recibido correctamente",
+  "Asesor": "Silvia Mata",
+  "email_asesor": "sm@prueba.com"
+}
+```
+
+| Campo | Uso |
+|---|---|
+| `ok` | Debe ser `true` para mostrar la página de éxito |
+| `mensaje` | Confirmación secundaria |
+| `Asesor` | Nombre del contacto asignado |
+| `email_asesor` | Correo clicable (`mailto:`) si el formato es válido |
+
+Si falta el nombre o el correo, se muestran textos de respaldo seguros. **Enviar una nueva solicitud** limpia el formulario y vuelve al inicio sin llamar de nuevo a n8n.
+
 ## Respuesta HTTP 422 (validación)
 
 Cuando el webhook de n8n responde con `422 Unprocessable Entity`, la aplicación **no** muestra la pantalla de error de conexión. Conserva el formulario y todos los datos introducidos, y muestra un cuadro de validación encima del formulario.

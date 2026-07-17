@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FormQrOverlay } from '../components/FormQrOverlay';
 import { FormView } from '../components/FormView';
 import { QrTriggerIcon } from '../components/QrIcons';
-import { SuccessView } from '../components/SuccessView';
+import { SuccessPage } from '../components/SuccessPage';
 import { TechnicalErrorView } from '../components/TechnicalErrorView';
 import { QR_FORM_CONFIG } from '../config/qrFormConfig';
 import { useCountries } from '../hooks/useCountries';
@@ -30,6 +30,12 @@ import {
 } from '../validation';
 import type { FormErrors } from '../validation';
 
+interface SuccessDetails {
+  message: string;
+  advisorName: string;
+  advisorEmail: string;
+}
+
 export function HomePage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,6 +48,9 @@ export function HomePage() {
   const [validationError, setValidationError] = useState<
     ApiValidationSummary | undefined
   >();
+  const [successDetails, setSuccessDetails] = useState<SuccessDetails | null>(
+    null,
+  );
   const submittingRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requiredFields, setRequiredFields] = useState<RequiredFieldsConfig>(
@@ -135,6 +144,11 @@ export function HomePage() {
           setProcessError(undefined);
           setValidationError(undefined);
           setErrors({});
+          setSuccessDetails({
+            message: result.message,
+            advisorName: result.advisorName,
+            advisorEmail: result.advisorEmail,
+          });
           setViewState('success');
           break;
         case 'processError':
@@ -198,6 +212,7 @@ export function HomePage() {
     setErrors({});
     setProcessError(undefined);
     setValidationError(undefined);
+    setSuccessDetails(null);
     setViewState('form');
   };
 
@@ -217,7 +232,14 @@ export function HomePage() {
   }
 
   if (viewState === 'success') {
-    return <SuccessView onNewRequest={handleNewRequest} />;
+    return (
+      <SuccessPage
+        message={successDetails?.message}
+        advisorName={successDetails?.advisorName}
+        advisorEmail={successDetails?.advisorEmail}
+        onNewRequest={handleNewRequest}
+      />
+    );
   }
 
   if (viewState === 'technicalError') {

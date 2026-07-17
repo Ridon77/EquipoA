@@ -631,6 +631,123 @@ a:hover {
   color: var(--ea-text-muted);
 }
 
+.success-page {
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.success-page__confirmation {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ea-text);
+}
+
+.success-page__advisor-card {
+  width: 100%;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--ea-border);
+  border-radius: var(--ea-radius-sm);
+  background: var(--ea-cyan-soft);
+}
+
+.success-page__advisor-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ea-navy);
+}
+
+.success-page__advisor-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.success-page__advisor-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: var(--ea-surface);
+  color: var(--ea-blue);
+}
+
+.success-page__advisor-name {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ea-navy);
+}
+
+.success-page__advisor-email {
+  display: inline-block;
+  margin-top: 0.25rem;
+  word-break: break-word;
+  color: var(--ea-blue);
+  font-weight: 500;
+}
+
+.success-page__steps {
+  width: 100%;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.success-page__steps-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  color: var(--ea-navy);
+}
+
+.success-page__steps-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.375rem;
+  color: var(--ea-text);
+}
+
+.success-page__next,
+.success-page__contact,
+.success-page__closing {
+  margin: 0;
+  color: var(--ea-text);
+}
+
+.success-page__closing {
+  font-weight: 600;
+  color: var(--ea-navy);
+}
+
+.success-page__actions {
+  width: 100%;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.success-page .result-state__title:focus {
+  outline: none;
+}
+
+.success-page .result-state__title:focus-visible {
+  box-shadow: 0 0 0 3px rgba(26, 184, 196, 0.35);
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .success-page__actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .success-page__actions .button--primary {
+    grid-column: 1 / -1;
+  }
+}
+
 .loading-inline {
   display: inline-flex;
   align-items: center;

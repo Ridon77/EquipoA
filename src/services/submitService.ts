@@ -136,13 +136,31 @@ function classifyValidationError(json: unknown): ApiResult {
   };
 }
 
+function asTrimmedString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function firstTrimmedString(
+  body: Record<string, unknown>,
+  keys: string[],
+): string {
+  for (const key of keys) {
+    const value = asTrimmedString(body[key]);
+    if (value) {
+      return value;
+    }
+  }
+
+  return '';
+}
+
 function isProcessErrorBody(json: unknown): boolean {
   const body = asRecord(json);
   if (!body) {
     return false;
   }
 
-  if (body.success === false) {
+  if (body.ok === false || body.success === false) {
     return true;
   }
 
@@ -150,6 +168,8 @@ function isProcessErrorBody(json: unknown): boolean {
 }
 
 function classifySuccessResponse(json: unknown, text: string): ApiResult {
+  const body = asRecord(json);
+
   if (isProcessErrorBody(json)) {
     return {
       kind: 'processError',
@@ -157,7 +177,30 @@ function classifySuccessResponse(json: unknown, text: string): ApiResult {
     };
   }
 
-  return { kind: 'success' };
+  if (body?.ok === true) {
+    return {
+      kind: 'success',
+      message: asTrimmedString(body.mensaje),
+      advisorName: firstTrimmedString(body, [
+        'Asesor',
+        'NombreAsesor',
+        'nombre_asesor',
+        'nombreAsesor',
+        'advisorName',
+      ]),
+      advisorEmail: firstTrimmedString(body, [
+        'email_asesor',
+        'EmailAsesor',
+        'emailAsesor',
+        'advisorEmail',
+      ]),
+    };
+  }
+
+  return {
+    kind: 'processError',
+    message: extractProcessMessage(json, text),
+  };
 }
 
 function classifyHttpResponse(

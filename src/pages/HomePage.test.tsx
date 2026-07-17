@@ -76,7 +76,7 @@ describe('HomePage', () => {
   });
 
   it('permite enviar con empresa vacía', async () => {
-    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
 
     const user = userEvent.setup();
 
@@ -86,7 +86,7 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
     expect(
-      await screen.findByText('La solicitud se ha procesado correctamente.'),
+      await screen.findByRole('heading', { name: 'Gracias por contactar con Equipo A' }),
     ).toBeInTheDocument();
   });
 
@@ -110,7 +110,7 @@ describe('HomePage', () => {
   });
 
   it('permite enviar con campos visualmente obligatorios vacíos', async () => {
-    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
 
     const user = userEvent.setup();
 
@@ -136,7 +136,7 @@ describe('HomePage', () => {
       }),
     );
     expect(
-      await screen.findByText('La solicitud se ha procesado correctamente.'),
+      await screen.findByRole('heading', { name: 'Gracias por contactar con Equipo A' }),
     ).toBeInTheDocument();
   });
 
@@ -221,11 +221,11 @@ describe('HomePage', () => {
 
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled();
 
-    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
     expect(
-      await screen.findByText('La solicitud se ha procesado correctamente.'),
+      await screen.findByRole('heading', { name: 'Gracias por contactar con Equipo A' }),
     ).toBeInTheDocument();
   });
 
@@ -263,7 +263,7 @@ describe('HomePage', () => {
   });
 
   it('limpia empresa tras nueva solicitud', async () => {
-    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
 
     const user = userEvent.setup();
 
@@ -274,14 +274,19 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
     await user.click(
-      await screen.findByRole('button', { name: 'Nueva solicitud' }),
+      await screen.findByRole('button', { name: 'Enviar una nueva solicitud' }),
     );
 
     expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('');
   });
 
   it('muestra confirmación tras éxito', async () => {
-    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+    vi.mocked(submitForm).mockResolvedValue({
+      kind: 'success',
+      message: 'Lead recibido correctamente',
+      advisorName: 'Silvia Mata',
+      advisorEmail: 'sm@prueba.com',
+    });
 
     const user = userEvent.setup();
 
@@ -291,10 +296,17 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
     expect(
-      await screen.findByText('La solicitud se ha procesado correctamente.'),
+      await screen.findByRole('heading', {
+        name: 'Gracias por contactar con Equipo A',
+      }),
     ).toBeInTheDocument();
+    expect(screen.getByText('Lead recibido correctamente')).toBeInTheDocument();
+    expect(screen.getByText(/Silvia Mata, miembro de nuestro equipo/)).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Nueva solicitud' }),
+      screen.getAllByRole('link', { name: 'sm@prueba.com' }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole('button', { name: 'Enviar una nueva solicitud' }),
     ).toBeInTheDocument();
   });
 
@@ -339,7 +351,7 @@ describe('HomePage', () => {
   });
 
   it('no muestra el botón QR tras un envío correcto', async () => {
-    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
 
     const user = userEvent.setup();
 
@@ -348,7 +360,7 @@ describe('HomePage', () => {
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
-    await screen.findByText('La solicitud se ha procesado correctamente.');
+    await screen.findByRole('heading', { name: 'Gracias por contactar con Equipo A' });
 
     expect(
       screen.queryByRole('button', {
@@ -454,7 +466,7 @@ describe('HomePage', () => {
   });
 
   it('un doble clic en Enviar produce una sola petición', async () => {
-    let resolveSubmit!: (value: { kind: 'success' }) => void;
+    let resolveSubmit!: (value: { kind: 'success', message: '', advisorName: '', advisorEmail: '' }) => void;
     vi.mocked(submitForm).mockImplementation(
       () =>
         new Promise((resolve) => {
@@ -478,10 +490,10 @@ describe('HomePage', () => {
       ),
     ).toBeInTheDocument();
 
-    resolveSubmit({ kind: 'success' });
+    resolveSubmit({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
 
     expect(
-      await screen.findByText('La solicitud se ha procesado correctamente.'),
+      await screen.findByRole('heading', { name: 'Gracias por contactar con Equipo A' }),
     ).toBeInTheDocument();
   });
 });

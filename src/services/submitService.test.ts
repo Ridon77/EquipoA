@@ -140,7 +140,7 @@ describe('submitForm', () => {
       submitApiUrl: '',
     });
 
-    expect(result).toEqual({ kind: 'success' });
+    expect(result).toEqual({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
@@ -184,7 +184,7 @@ describe('submitForm', () => {
 
     const result = await submitForm(formData, testConfig);
 
-    expect(result).toEqual({ kind: 'success' });
+    expect(result).toEqual({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
   });
 
   it('clasifica HTTP 200 como success', async () => {
@@ -192,7 +192,54 @@ describe('submitForm', () => {
 
     const result = await submitForm(formData, testConfig);
 
-    expect(result).toEqual({ kind: 'success' });
+    expect(result).toEqual({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
+  });
+
+  it('clasifica HTTP 200 con ok true y datos de asesor', async () => {
+    mockFetchResponse(200, {
+      ok: true,
+      mensaje: 'Lead recibido correctamente',
+      Asesor: '  Silvia Mata  ',
+      email_asesor: 'sm@prueba.com',
+    });
+
+    const result = await submitForm(formData, testConfig);
+
+    expect(result).toEqual({
+      kind: 'success',
+      message: 'Lead recibido correctamente',
+      advisorName: 'Silvia Mata',
+      advisorEmail: 'sm@prueba.com',
+    });
+  });
+
+  it('clasifica HTTP 200 con ok false como process-error', async () => {
+    mockFetchResponse(200, {
+      ok: false,
+      mensaje: 'No se pudo registrar',
+    });
+
+    const result = await submitForm(formData, testConfig);
+
+    expect(result.kind).toBe('processError');
+  });
+
+  it('ignora tipos no string en Asesor y email_asesor', async () => {
+    mockFetchResponse(200, {
+      ok: true,
+      mensaje: 'Lead recibido correctamente',
+      Asesor: { name: 'Silvia' },
+      email_asesor: ['sm@prueba.com'],
+    });
+
+    const result = await submitForm(formData, testConfig);
+
+    expect(result).toEqual({
+      kind: 'success',
+      message: 'Lead recibido correctamente',
+      advisorName: '',
+      advisorEmail: '',
+    });
   });
 
   it('clasifica HTTP 200 con success false como process-error', async () => {
