@@ -19,16 +19,16 @@ describe('validateAdminConfig', () => {
     expect(hasAdminErrors(errors)).toBe(true);
   });
 
-  it('rechaza URLs inválidas de envío', () => {
+  it('ignora URLs de envío inválidas (la URL ya no es configurable)', () => {
     const errors = validateAdminConfig({
       ...validConfig,
       submitApiUrl: 'sin-protocolo',
     });
 
-    expect(errors.submitApiUrl).toBeDefined();
+    expect(errors.submitApiUrl).toBeUndefined();
   });
 
-  it('permite URL de envío vacía', () => {
+  it('no valida la URL de envío vacía', () => {
     const errors = validateAdminConfig({
       ...validConfig,
       submitApiUrl: '',

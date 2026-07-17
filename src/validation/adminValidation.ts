@@ -33,8 +33,6 @@ export const parameterFieldOrder: ParameterField[] = [
 
 export type AdminErrors = {
   countriesApiUrl?: string;
-  submitApiUrl?: string;
-  submitTimeoutMs?: string;
   parameterMapping?: Partial<Record<ParameterField, string>>;
   requiredFields?: string;
 };
@@ -50,7 +48,7 @@ export function trimAdminConfig(config: AppConfig): AppConfig {
 
   return {
     countriesApiUrl: config.countriesApiUrl.trim(),
-    submitApiUrl: config.submitApiUrl.trim(),
+    submitApiUrl: config.submitApiUrl,
     submitTimeoutMs: config.submitTimeoutMs,
     parameterMapping: {
       nombre: config.parameterMapping.nombre.trim(),
@@ -72,18 +70,6 @@ export function validateAdminConfig(config: AppConfig): AdminErrors {
   if (!trimmed.countriesApiUrl || !URL_PATTERN.test(trimmed.countriesApiUrl)) {
     errors.countriesApiUrl =
       'La URL de la API de países debe comenzar por http:// o https://.';
-  }
-
-  if (trimmed.submitApiUrl && !URL_PATTERN.test(trimmed.submitApiUrl)) {
-    errors.submitApiUrl =
-      'La URL de la API de envío debe comenzar por http:// o https://.';
-  }
-
-  if (
-    !Number.isInteger(trimmed.submitTimeoutMs) ||
-    trimmed.submitTimeoutMs <= 0
-  ) {
-    errors.submitTimeoutMs = 'El timeout debe ser un entero positivo.';
   }
 
   for (const field of parameterFieldOrder) {

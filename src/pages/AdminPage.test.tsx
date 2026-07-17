@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import { AdminPage } from './AdminPage';
 
 function renderAdminPage() {
@@ -16,6 +17,30 @@ function renderAdminPage() {
 describe('AdminPage', () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  it('muestra la URL de envío fija en solo lectura', () => {
+    renderAdminPage();
+
+    const submitUrl = screen.getByLabelText(/URL de la API de envío/i);
+    expect(submitUrl).toHaveValue(SUBMIT_WEBHOOK_URL);
+    expect(submitUrl).toHaveAttribute('readonly');
+    expect(
+      screen.getByText(
+        /La URL de envío está definida por la aplicación y no puede modificarse/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Timeout/i)).not.toBeInTheDocument();
+  });
+
+  it('muestra la ayuda de obligatoriedad solo visual', () => {
+    renderAdminPage();
+
+    expect(
+      screen.getByText(
+        /Esta configuración indica visualmente qué campos se solicitan como obligatorios/,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('muestra la fila Empresa en la tabla', () => {

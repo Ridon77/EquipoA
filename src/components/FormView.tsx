@@ -154,7 +154,6 @@ export function FormView({
             type="text"
             className="form-control"
             value={formData.nombre}
-            required={requiredFields.nombre}
             aria-required={requiredFields.nombre || undefined}
             onChange={(event) => onChange('nombre', event.target.value)}
             aria-invalid={errors.nombre ? true : undefined}
@@ -178,7 +177,6 @@ export function FormView({
             type="email"
             className="form-control"
             value={formData.email}
-            required={requiredFields.email}
             aria-required={requiredFields.email || undefined}
             onChange={(event) => onChange('email', event.target.value)}
             aria-invalid={errors.email ? true : undefined}
@@ -202,7 +200,6 @@ export function FormView({
             type="text"
             className="form-control"
             value={formData.empresa}
-            required={requiredFields.empresa}
             aria-required={requiredFields.empresa || undefined}
             onChange={(event) => onChange('empresa', event.target.value)}
             aria-invalid={errors.empresa ? true : undefined}
@@ -241,7 +238,6 @@ export function FormView({
             className="form-textarea"
             rows={4}
             value={formData.mensaje}
-            required={requiredFields.mensaje}
             aria-required={requiredFields.mensaje || undefined}
             onChange={(event) => onChange('mensaje', event.target.value)}
             aria-invalid={errors.mensaje ? true : undefined}
@@ -256,6 +252,13 @@ export function FormView({
       </div>
 
       <div className="form-actions">
+        {isSubmitting && (
+          <span className="loading-inline" role="status" aria-live="polite">
+            <span className="spinner" aria-hidden="true" />
+            Estamos procesando su solicitud. Este proceso puede tardar unos
+            minutos.
+          </span>
+        )}
         <button
           type="submit"
           className="button button--primary button--full"

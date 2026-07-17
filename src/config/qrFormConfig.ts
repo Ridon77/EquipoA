@@ -1,9 +1,11 @@
 import type { AppConfig } from '../types';
+import { SUBMIT_WEBHOOK_URL } from './submitEndpoint';
 
 /** Configuración fija aplicada al acceder al formulario mediante el código QR. */
 export const QR_FORM_CONFIG: AppConfig = {
   countriesApiUrl: 'https://countriesnow.space/api/v0.1/countries',
-  submitApiUrl: 'https://santisola.app.n8n.cloud/webhook/lead?',
+  submitApiUrl: SUBMIT_WEBHOOK_URL,
+  /** Ignorado: el envío ya no usa timeout de cliente. Conservado por compatibilidad. */
   submitTimeoutMs: 10000,
   parameterMapping: {
     nombre: 'Nombre',

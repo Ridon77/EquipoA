@@ -42,6 +42,7 @@ export function HomePage() {
   const [validationError, setValidationError] = useState<
     ApiValidationSummary | undefined
   >();
+  const submittingRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requiredFields, setRequiredFields] = useState<RequiredFieldsConfig>(
     () => loadConfig().requiredFields,
@@ -117,10 +118,11 @@ export function HomePage() {
   };
 
   const handleValidSubmit = async (data: FormData) => {
-    if (isSubmitting) {
+    if (submittingRef.current) {
       return;
     }
 
+    submittingRef.current = true;
     setIsSubmitting(true);
     setProcessError(undefined);
     setValidationError(undefined);
@@ -159,12 +161,13 @@ export function HomePage() {
           break;
       }
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
 
   const handleSubmit = () => {
-    if (isSubmitting) {
+    if (submittingRef.current || isSubmitting) {
       return;
     }
 
@@ -172,7 +175,6 @@ export function HomePage() {
     const currentRequiredFields = loadConfig().requiredFields;
     const validationErrors = validateForm(
       trimmed,
-      currentRequiredFields,
       countryOptions,
       cityOptions,
     );

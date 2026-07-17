@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_CONFIG } from '../config/defaultConfig';
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import type { AppConfig, FormData } from '../types';
 import { buildSubmitUrl, submitForm } from './submitService';
 
@@ -29,12 +30,15 @@ const testConfig: AppConfig = {
 };
 
 describe('buildSubmitUrl', () => {
+  it('usa siempre SUBMIT_WEBHOOK_URL', () => {
+    const url = buildSubmitUrl(formData, customMapping);
+
+    expect(url.startsWith(`${SUBMIT_WEBHOOK_URL}?`)).toBe(true);
+    expect(url).not.toContain('api.example.com');
+  });
+
   it('usa nombres configurados', () => {
-    const url = buildSubmitUrl(
-      testConfig.submitApiUrl,
-      formData,
-      customMapping,
-    );
+    const url = buildSubmitUrl(formData, customMapping);
 
     expect(url).toContain('customerName=');
     expect(url).toContain('customerEmail=');
@@ -45,51 +49,33 @@ describe('buildSubmitUrl', () => {
   });
 
   it('codifica espacios', () => {
-    const url = buildSubmitUrl(
-      testConfig.submitApiUrl,
-      formData,
-      customMapping,
-    );
+    const url = buildSubmitUrl(formData, customMapping);
 
     expect(url).toContain('customerMessage=Solicitud+con+espacios');
   });
 
-  it('no genera ?? cuando la URL base termina en ?', () => {
-    const url = buildSubmitUrl(
-      'https://santisola.app.n8n.cloud/webhook/lead?',
-      formData,
-      {
-        nombre: 'Nombre',
-        email: 'Email',
-        empresa: 'Empresa',
-        pais: 'Pais',
-        ciudad: 'Ciudad',
-        mensaje: 'Mensaje',
-      },
-    );
+  it('no genera ??', () => {
+    const url = buildSubmitUrl(formData, {
+      nombre: 'Nombre',
+      email: 'Email',
+      empresa: 'Empresa',
+      pais: 'Pais',
+      ciudad: 'Ciudad',
+      mensaje: 'Mensaje',
+    });
 
     expect(url).not.toContain('??');
-    expect(url.startsWith('https://santisola.app.n8n.cloud/webhook/lead?')).toBe(
-      true,
-    );
-    expect(url).toContain('Nombre=');
-    expect(url).toContain('Pais=');
+    expect(url.startsWith(`${SUBMIT_WEBHOOK_URL}?`)).toBe(true);
   });
 
   it('codifica arrobas', () => {
-    const url = buildSubmitUrl(
-      testConfig.submitApiUrl,
-      formData,
-      customMapping,
-    );
+    const url = buildSubmitUrl(formData, customMapping);
 
     expect(url).toContain('customerEmail=joan%40example.com');
   });
 
   it('codifica acentos y caracteres especiales de empresa', () => {
-    const url = new URL(
-      buildSubmitUrl(testConfig.submitApiUrl, formData, customMapping),
-    );
+    const url = new URL(buildSubmitUrl(formData, customMapping));
 
     expect(url.searchParams.get('customerName')).toBe('Joan García');
     expect(url.searchParams.get('customerCountry')).toBe('España');
@@ -99,21 +85,13 @@ describe('buildSubmitUrl', () => {
   });
 
   it('incluye campos vacíos', () => {
-    const url = buildSubmitUrl(
-      testConfig.submitApiUrl,
-      formData,
-      customMapping,
-    );
+    const url = buildSubmitUrl(formData, customMapping);
 
     expect(url).toContain('customerCity=');
   });
 
   it('incluye empresa aunque esté vacía', () => {
-    const url = buildSubmitUrl(
-      testConfig.submitApiUrl,
-      { ...formData, empresa: '' },
-      customMapping,
-    );
+    const url = buildSubmitUrl({ ...formData, empresa: '' }, customMapping);
 
     expect(url).toContain('companyName=');
   });
@@ -123,6 +101,7 @@ describe('submitForm', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'debug').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -139,14 +118,73 @@ describe('submitForm', () => {
     );
   }
 
-  it('devuelve technical-error si la URL de envío está vacía', async () => {
+  it('ignora submitApiUrl del config y usa SUBMIT_WEBHOOK_URL', async () => {
+    mockFetchResponse(200, { ok: true });
+
+    await submitForm(formData, {
+      ...testConfig,
+      submitApiUrl: 'https://otro-dominio.example/webhook',
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const calledUrl = String(vi.mocked(fetch).mock.calls[0]?.[0]);
+    expect(calledUrl.startsWith(`${SUBMIT_WEBHOOK_URL}?`)).toBe(true);
+    expect(calledUrl).not.toContain('otro-dominio');
+  });
+
+  it('envía aunque submitApiUrl esté vacía en config', async () => {
+    mockFetchResponse(200, { ok: true });
+
     const result = await submitForm(formData, {
       ...testConfig,
       submitApiUrl: '',
     });
 
-    expect(result).toEqual({ kind: 'technicalError' });
-    expect(fetch).not.toHaveBeenCalled();
+    expect(result).toEqual({ kind: 'success' });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('no usa AbortController ni timeout de cliente', async () => {
+    const abortSpy = vi.fn();
+    vi.stubGlobal(
+      'AbortController',
+      vi.fn(() => ({
+        abort: abortSpy,
+        signal: { aborted: false },
+      })),
+    );
+
+    mockFetchResponse(200, { ok: true });
+
+    await submitForm(formData, {
+      ...testConfig,
+      submitTimeoutMs: 1,
+    });
+
+    expect(AbortController).not.toHaveBeenCalled();
+    expect(abortSpy).not.toHaveBeenCalled();
+    const fetchInit = vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit;
+    expect(fetchInit?.signal).toBeUndefined();
+  });
+
+  it('procesa una respuesta lenta correctamente', async () => {
+    vi.mocked(fetch).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          window.setTimeout(() => {
+            resolve(
+              new Response(JSON.stringify({ ok: true }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+              }),
+            );
+          }, 30);
+        }),
+    );
+
+    const result = await submitForm(formData, testConfig);
+
+    expect(result).toEqual({ kind: 'success' });
   });
 
   it('clasifica HTTP 200 como success', async () => {
@@ -245,24 +283,6 @@ describe('submitForm', () => {
     vi.mocked(fetch).mockRejectedValue(new Error('Network error'));
 
     const result = await submitForm(formData, testConfig);
-
-    expect(result).toEqual({ kind: 'technicalError' });
-  });
-
-  it('clasifica timeout como technical-error', async () => {
-    vi.mocked(fetch).mockImplementation(
-      (_input, init) =>
-        new Promise((_resolve, reject) => {
-          init?.signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
-          });
-        }),
-    );
-
-    const result = await submitForm(formData, {
-      ...testConfig,
-      submitTimeoutMs: 20,
-    });
 
     expect(result).toEqual({ kind: 'technicalError' });
   });

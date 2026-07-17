@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import {
   loadConfig,
   migrateConfig,
@@ -30,6 +31,11 @@ const customConfig: AppConfig = {
   },
 };
 
+const normalizedCustomConfig: AppConfig = {
+  ...customConfig,
+  submitApiUrl: SUBMIT_WEBHOOK_URL,
+};
+
 describe('configService', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -39,18 +45,18 @@ describe('configService', () => {
     expect(loadConfig()).toEqual(DEFAULT_CONFIG);
   });
 
-  it('guarda configuración', () => {
+  it('guarda configuración forzando SUBMIT_WEBHOOK_URL', () => {
     saveConfig(customConfig);
 
     expect(localStorage.getItem(CONFIG_STORAGE_KEY)).toBe(
-      JSON.stringify(customConfig),
+      JSON.stringify(normalizedCustomConfig),
     );
   });
 
-  it('recupera configuración guardada', () => {
+  it('recupera configuración guardada con URL fija', () => {
     saveConfig(customConfig);
 
-    expect(loadConfig()).toEqual(customConfig);
+    expect(loadConfig()).toEqual(normalizedCustomConfig);
   });
 
   it('restaura valores predeterminados', () => {
@@ -67,7 +73,7 @@ describe('configService', () => {
     expect(loadConfig()).toEqual(DEFAULT_CONFIG);
   });
 
-  it('migra configuraciones antiguas sin empresa ni requiredFields', () => {
+  it('migra configuraciones antiguas normalizando la URL de envío', () => {
     const legacyStored = {
       countriesApiUrl: 'https://legacy.example.com/countries',
       submitApiUrl: 'https://legacy.example.com/submit',
@@ -84,7 +90,9 @@ describe('configService', () => {
     localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(legacyStored));
 
     expect(loadConfig()).toEqual({
-      ...legacyStored,
+      countriesApiUrl: legacyStored.countriesApiUrl,
+      submitApiUrl: SUBMIT_WEBHOOK_URL,
+      submitTimeoutMs: legacyStored.submitTimeoutMs,
       parameterMapping: {
         ...legacyStored.parameterMapping,
         empresa: 'empresa',
@@ -106,6 +114,7 @@ describe('configService', () => {
     });
 
     expect(migrated.parameterMapping.empresa).toBe('companyName');
+    expect(migrated.submitApiUrl).toBe(SUBMIT_WEBHOOK_URL);
   });
 
   it('sustituye requiredFields corruptos por valores predeterminados', () => {

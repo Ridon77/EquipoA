@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
 import { QR_FORM_CONFIG } from '../config/qrFormConfig';
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import { loadConfig, saveConfig } from '../services/configService';
 import type { AppConfig } from '../types';
 import {
@@ -114,9 +115,7 @@ describe('applyQrFormConfig', () => {
     expect(config.countriesApiUrl).toBe(
       'https://countriesnow.space/api/v0.1/countries',
     );
-    expect(config.submitApiUrl).toBe(
-      'https://santisola.app.n8n.cloud/webhook/lead?',
-    );
+    expect(config.submitApiUrl).toBe(SUBMIT_WEBHOOK_URL);
     expect(config.submitTimeoutMs).toBe(10000);
     expect(config.parameterMapping).toEqual({
       nombre: 'Nombre',

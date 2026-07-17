@@ -186,7 +186,6 @@ export function FilterableCombobox({
         value={query}
         placeholder={placeholder}
         disabled={disabled}
-        required={required}
         autoComplete="off"
         aria-required={required || undefined}
         aria-expanded={isOpen}

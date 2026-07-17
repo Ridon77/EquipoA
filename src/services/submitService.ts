@@ -1,3 +1,4 @@
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import type { AppConfig, ApiResult, FormData, ParameterMapping } from '../types';
 import { normalizeFieldList } from '../utils/normalizeFieldList';
 import { loadConfig } from './configService';
@@ -10,14 +11,12 @@ interface ParsedResponseBody {
   text: string;
 }
 
+/** Construye la URL de envío con la constante fija y el mapeo configurable. */
 export function buildSubmitUrl(
-  baseUrl: string,
   formData: FormData,
   mapping: ParameterMapping,
 ): string {
-  // Evita ?? cuando la URL base ya termina en '?'.
-  const normalizedBase = baseUrl.trim().replace(/\?+$/, '');
-  const url = new URL(normalizedBase);
+  const url = new URL(SUBMIT_WEBHOOK_URL);
 
   url.searchParams.set(mapping.nombre, formData.nombre);
   url.searchParams.set(mapping.email, formData.email);
@@ -190,53 +189,46 @@ function classifyHttpResponse(
   return { kind: 'technicalError' };
 }
 
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError';
-}
-
 export async function submitForm(
   formData: FormData,
   config: AppConfig = loadConfig(),
 ): Promise<ApiResult> {
-  const submitApiUrl = config.submitApiUrl.trim();
-
-  if (!submitApiUrl) {
-    return { kind: 'technicalError' };
-  }
+  const requestId =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `req-${Date.now()}`;
 
   let requestUrl: string;
 
   try {
-    requestUrl = buildSubmitUrl(submitApiUrl, formData, config.parameterMapping);
+    requestUrl = buildSubmitUrl(formData, config.parameterMapping);
   } catch {
     return { kind: 'technicalError' };
   }
 
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(
-    () => controller.abort(),
-    config.submitTimeoutMs,
-  );
+  if (import.meta.env.DEV) {
+    console.debug(`[${requestId}] Inicio de envío a n8n`);
+  }
 
   try {
     const response = await fetch(requestUrl, {
       method: 'GET',
-      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+      },
     });
+
+    if (import.meta.env.DEV) {
+      console.debug(`[${requestId}] Respuesta recibida`, response.status);
+    }
 
     const { json, text } = await parseResponseBody(response);
     return classifyHttpResponse(response, json, text);
   } catch (error) {
     if (import.meta.env.DEV) {
-      console.error('Error al enviar la solicitud:', error);
-    }
-
-    if (isAbortError(error)) {
-      return { kind: 'technicalError' };
+      console.error(`[${requestId}] Error al enviar la solicitud:`, error);
     }
 
     return { kind: 'technicalError' };
-  } finally {
-    window.clearTimeout(timeoutId);
   }
 }

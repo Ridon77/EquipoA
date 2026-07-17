@@ -20,7 +20,7 @@ const countries = ['España', 'Francia'];
 const citiesForSpain = ['Madrid', 'Barcelona'];
 
 describe('validateForm', () => {
-  it('usa los valores predeterminados de obligatoriedad', () => {
+  it('documenta los valores predeterminados de obligatoriedad visual', () => {
     expect(defaultRequired).toEqual({
       nombre: true,
       email: false,
@@ -31,67 +31,40 @@ describe('validateForm', () => {
     });
   });
 
-  it('requiere nombre cuando es obligatorio', () => {
+  it('permite campos visualmente obligatorios vacíos', () => {
     const errors = validateForm(
-      { ...baseForm, nombre: '   ' },
-      defaultRequired,
+      {
+        nombre: '',
+        email: '',
+        empresa: '',
+        pais: '',
+        ciudad: '',
+        mensaje: '',
+      },
       countries,
       citiesForSpain,
     );
 
-    expect(errors.nombre).toBe('Introduzca su nombre.');
+    expect(errors).toEqual({});
+    expect(hasFormErrors(errors)).toBe(false);
   });
 
-  it('permite nombre vacío cuando es opcional', () => {
-    const errors = validateForm(
-      { ...baseForm, nombre: '' },
-      { ...defaultRequired, nombre: false },
-      countries,
-      citiesForSpain,
-    );
-
-    expect(errors.nombre).toBeUndefined();
-  });
-
-  it('requiere mensaje cuando es obligatorio', () => {
-    const errors = validateForm(
-      { ...baseForm, mensaje: '' },
-      defaultRequired,
-      countries,
-      citiesForSpain,
-    );
-
-    expect(errors.mensaje).toBe('Introduzca su solicitud.');
-  });
-
-  it('permite empresa vacía por defecto', () => {
-    const errors = validateForm(baseForm, defaultRequired, countries, citiesForSpain);
+  it('permite empresa vacía', () => {
+    const errors = validateForm(baseForm, countries, citiesForSpain);
 
     expect(errors.empresa).toBeUndefined();
     expect(hasFormErrors(errors)).toBe(false);
   });
 
-  it('requiere empresa cuando está configurada', () => {
-    const errors = validateForm(
-      baseForm,
-      { ...defaultRequired, empresa: true },
-      countries,
-      citiesForSpain,
-    );
-
-    expect(errors.empresa).toBe('Introduzca su empresa.');
-  });
-
-  it('permite email vacío cuando es opcional', () => {
-    const errors = validateForm(baseForm, defaultRequired, countries, citiesForSpain);
+  it('permite email vacío', () => {
+    const errors = validateForm(baseForm, countries, citiesForSpain);
 
     expect(errors.email).toBeUndefined();
   });
 
-  it('rechaza email incorrecto aunque sea opcional', () => {
+  it('rechaza email incorrecto cuando tiene valor', () => {
     const errors = validateForm(
       { ...baseForm, email: 'correo-invalido' },
-      defaultRequired,
       countries,
       citiesForSpain,
     );
@@ -99,50 +72,16 @@ describe('validateForm', () => {
     expect(errors.email).toBe('Introduzca una dirección de correo válida.');
   });
 
-  it('requiere email cuando es obligatorio', () => {
-    const errors = validateForm(
-      baseForm,
-      { ...defaultRequired, email: true },
-      countries,
-      citiesForSpain,
-    );
-
-    expect(errors.email).toBe('Introduzca su email.');
-  });
-
-  it('permite país y ciudad vacíos por defecto', () => {
-    const errors = validateForm(baseForm, defaultRequired, countries, citiesForSpain);
+  it('permite país y ciudad vacíos', () => {
+    const errors = validateForm(baseForm, countries, citiesForSpain);
 
     expect(errors.pais).toBeUndefined();
     expect(errors.ciudad).toBeUndefined();
   });
 
-  it('requiere país cuando es obligatorio', () => {
-    const errors = validateForm(
-      baseForm,
-      { ...defaultRequired, pais: true },
-      countries,
-      citiesForSpain,
-    );
-
-    expect(errors.pais).toBe('Seleccione un país.');
-  });
-
-  it('requiere ciudad cuando es obligatoria', () => {
-    const errors = validateForm(
-      { ...baseForm, pais: 'España' },
-      { ...defaultRequired, pais: true, ciudad: true },
-      countries,
-      citiesForSpain,
-    );
-
-    expect(errors.ciudad).toBe('Seleccione una ciudad.');
-  });
-
   it('rechaza ciudad incompatible con el país', () => {
     const errors = validateForm(
       { ...baseForm, pais: 'España', ciudad: 'París' },
-      defaultRequired,
       countries,
       citiesForSpain,
     );
@@ -155,7 +94,6 @@ describe('validateForm', () => {
   it('rechaza país no listado', () => {
     const errors = validateForm(
       { ...baseForm, pais: 'Atlantis' },
-      defaultRequired,
       countries,
       citiesForSpain,
     );

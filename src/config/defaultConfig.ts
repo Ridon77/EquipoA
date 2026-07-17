@@ -1,8 +1,10 @@
 import type { AppConfig } from '../types';
+import { SUBMIT_WEBHOOK_URL } from './submitEndpoint';
 
 export const defaultConfig: AppConfig = {
   countriesApiUrl: 'https://countriesnow.space/api/v0.1/countries',
-  submitApiUrl: '',
+  submitApiUrl: SUBMIT_WEBHOOK_URL,
+  /** Ignorado: el envío ya no usa timeout de cliente. Conservado por compatibilidad. */
   submitTimeoutMs: 10000,
   parameterMapping: {
     nombre: 'nombre',

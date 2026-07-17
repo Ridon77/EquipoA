@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
 import { QR_FORM_CONFIG } from '../config/qrFormConfig';
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import { loadConfig, saveConfig } from '../services/configService';
 import { HomePage } from './HomePage';
 
@@ -89,7 +90,7 @@ describe('HomePage', () => {
     ).toBeInTheDocument();
   });
 
-  it('conserva valores tras error de validación', async () => {
+  it('conserva valores tras error de formato local', async () => {
     const user = userEvent.setup();
 
     renderHomePage();
@@ -97,12 +98,46 @@ describe('HomePage', () => {
 
     await user.type(screen.getByLabelText(/^Nombre/i), 'Joan');
     await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
+    await user.type(screen.getByLabelText(/^Email/i), 'correo-invalido');
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
     expect(screen.getByLabelText(/^Nombre/i)).toHaveValue('Joan');
     expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('Acme S.L.');
-    expect(screen.getByText('Introduzca su solicitud.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Introduzca una dirección de correo válida.'),
+    ).toBeInTheDocument();
     expect(submitForm).not.toHaveBeenCalled();
+  });
+
+  it('permite enviar con campos visualmente obligatorios vacíos', async () => {
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+
+    const user = userEvent.setup();
+
+    renderHomePage();
+    await waitForForm();
+
+    const nombre = screen.getByLabelText(/^Nombre/i);
+    expect(nombre).not.toHaveAttribute('required');
+    expect(nombre).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+    expect(submitForm).toHaveBeenCalledTimes(1);
+    expect(submitForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nombre: '',
+        email: '',
+        empresa: '',
+        pais: '',
+        ciudad: '',
+        mensaje: '',
+      }),
+    );
+    expect(
+      await screen.findByText('La solicitud se ha procesado correctamente.'),
+    ).toBeInTheDocument();
   });
 
   it('conserva valores tras error de proceso', async () => {
@@ -347,38 +382,35 @@ describe('HomePage', () => {
     );
   });
 
-  it('aplica QR_FORM_CONFIG si submitApiUrl está vacía en acceso normal', async () => {
-    saveConfig({
-      ...DEFAULT_CONFIG,
-      submitApiUrl: '',
-      requiredFields: {
-        ...DEFAULT_CONFIG.requiredFields,
-        email: false,
-      },
-    });
+  it('normaliza submitApiUrl vacía a la URL fija sin aplicar el preset QR', async () => {
+    localStorage.setItem(
+      CONFIG_STORAGE_KEY,
+      JSON.stringify({
+        ...DEFAULT_CONFIG,
+        submitApiUrl: '',
+        requiredFields: {
+          ...DEFAULT_CONFIG.requiredFields,
+          email: false,
+        },
+      }),
+    );
 
     renderHomePage('/');
+    await waitForForm();
 
-    await waitFor(() => {
-      expect(loadConfig()).toEqual(QR_FORM_CONFIG);
-    });
-
-    expect(screen.getByLabelText(/^Email/i)).toBeRequired();
-    expect(
-      screen.queryByText('Preparando el formulario...'),
-    ).not.toBeInTheDocument();
+    expect(loadConfig().submitApiUrl).toBe(SUBMIT_WEBHOOK_URL);
+    expect(loadConfig().requiredFields.email).toBe(false);
+    expect(screen.getByLabelText(/^Email/i)).not.toBeRequired();
   });
 
-  it('aplica el preset si no hay configuración guardada', async () => {
+  it('usa DEFAULT_CONFIG si no hay configuración guardada', async () => {
     localStorage.clear();
 
     renderHomePage('/');
+    await waitForForm();
 
-    await waitFor(() => {
-      expect(loadConfig()).toEqual(QR_FORM_CONFIG);
-    });
-
-    expect(screen.getByLabelText(/^Email/i)).toBeRequired();
+    expect(loadConfig()).toEqual(DEFAULT_CONFIG);
+    expect(screen.getByLabelText(/^Email/i)).not.toBeRequired();
   });
 
   it('conserva configuración personalizada válida en acceso normal', async () => {
@@ -400,12 +432,15 @@ describe('HomePage', () => {
     renderHomePage('/');
     await waitForForm();
 
-    expect(loadConfig()).toEqual(custom);
+    expect(loadConfig()).toEqual({
+      ...custom,
+      submitApiUrl: SUBMIT_WEBHOOK_URL,
+    });
     expect(screen.getByLabelText(/^Email/i)).toBeRequired();
     expect(screen.getByLabelText(/^Empresa/i)).toBeRequired();
   });
 
-  it('no aplica el preset QR en un acceso normal con URL válida', async () => {
+  it('no aplica el preset QR en un acceso normal', async () => {
     saveConfig({
       ...DEFAULT_CONFIG,
       submitApiUrl: 'https://admin-config.example/webhook',
@@ -414,8 +449,39 @@ describe('HomePage', () => {
     renderHomePage('/');
     await waitForForm();
 
-    expect(loadConfig().submitApiUrl).toBe(
-      'https://admin-config.example/webhook',
+    expect(loadConfig().submitApiUrl).toBe(SUBMIT_WEBHOOK_URL);
+    expect(loadConfig().requiredFields).toEqual(DEFAULT_CONFIG.requiredFields);
+  });
+
+  it('un doble clic en Enviar produce una sola petición', async () => {
+    let resolveSubmit!: (value: { kind: 'success' }) => void;
+    vi.mocked(submitForm).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSubmit = resolve;
+        }),
     );
+
+    const user = userEvent.setup();
+
+    renderHomePage();
+    await waitForForm();
+    await fillValidForm(user);
+
+    const submitButton = screen.getByRole('button', { name: 'Enviar' });
+    await user.dblClick(submitButton);
+
+    expect(submitForm).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByText(
+        /Estamos procesando su solicitud. Este proceso puede tardar unos minutos/,
+      ),
+    ).toBeInTheDocument();
+
+    resolveSubmit({ kind: 'success' });
+
+    expect(
+      await screen.findByText('La solicitud se ha procesado correctamente.'),
+    ).toBeInTheDocument();
   });
 });

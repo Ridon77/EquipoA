@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_CONFIG } from '../config/defaultConfig';
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import { clearCountriesCache } from '../services/countriesService';
 import {
   loadConfig,
@@ -27,28 +28,12 @@ export function AdminPage() {
   const [errors, setErrors] = useState<AdminErrors>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleUrlChange = (
-    field: 'countriesApiUrl' | 'submitApiUrl',
-    value: string,
-  ) => {
-    setConfig((current) => ({ ...current, [field]: value }));
+  const handleCountriesUrlChange = (value: string) => {
+    setConfig((current) => ({ ...current, countriesApiUrl: value }));
     setSuccessMessage(null);
 
-    if (errors[field]) {
-      setErrors((current) => ({ ...current, [field]: undefined }));
-    }
-  };
-
-  const handleTimeoutChange = (value: string) => {
-    const parsed = Number.parseInt(value, 10);
-    setConfig((current) => ({
-      ...current,
-      submitTimeoutMs: Number.isNaN(parsed) ? 0 : parsed,
-    }));
-    setSuccessMessage(null);
-
-    if (errors.submitTimeoutMs) {
-      setErrors((current) => ({ ...current, submitTimeoutMs: undefined }));
+    if (errors.countriesApiUrl) {
+      setErrors((current) => ({ ...current, countriesApiUrl: undefined }));
     }
   };
 
@@ -109,7 +94,10 @@ export function AdminPage() {
   const handleSave = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const trimmed = trimAdminConfig(config);
+    const trimmed = trimAdminConfig({
+      ...config,
+      submitApiUrl: SUBMIT_WEBHOOK_URL,
+    });
     const validationErrors = validateAdminConfig(trimmed);
 
     setConfig(trimmed);
@@ -176,7 +164,8 @@ export function AdminPage() {
           <section className="admin-section">
             <h2 className="admin-section__title">Configuración de servicios</h2>
             <p className="admin-section__description">
-              Defina las URLs utilizadas para cargar países y enviar solicitudes.
+              Defina la URL utilizada para cargar países. La URL de envío está
+              fijada por la aplicación.
             </p>
 
             <div className="form-field">
@@ -190,7 +179,7 @@ export function AdminPage() {
                 className="form-control"
                 value={config.countriesApiUrl}
                 onChange={(event) =>
-                  handleUrlChange('countriesApiUrl', event.target.value)
+                  handleCountriesUrlChange(event.target.value)
                 }
                 aria-invalid={errors.countriesApiUrl ? true : undefined}
               />
@@ -210,54 +199,26 @@ export function AdminPage() {
                 name="submitApiUrl"
                 type="url"
                 className="form-control"
-                value={config.submitApiUrl}
-                onChange={(event) =>
-                  handleUrlChange('submitApiUrl', event.target.value)
-                }
-                aria-invalid={errors.submitApiUrl ? true : undefined}
+                value={SUBMIT_WEBHOOK_URL}
+                readOnly
               />
-              {errors.submitApiUrl && (
-                <p className="form-error" role="alert">
-                  {errors.submitApiUrl}
-                </p>
-              )}
-            </div>
-          </section>
-
-          <section className="admin-section">
-            <h2 className="admin-section__title">Tiempo máximo de espera</h2>
-            <p className="admin-section__description">
-              Tiempo en milisegundos antes de cancelar una petición de envío.
-            </p>
-
-            <div className="form-field">
-              <label className="form-label" htmlFor="submitTimeoutMs">
-                Timeout (milisegundos)
-              </label>
-              <input
-                id="submitTimeoutMs"
-                name="submitTimeoutMs"
-                type="number"
-                min={1}
-                step={1}
-                className="form-control"
-                value={config.submitTimeoutMs}
-                onChange={(event) => handleTimeoutChange(event.target.value)}
-                aria-invalid={errors.submitTimeoutMs ? true : undefined}
-              />
-              {errors.submitTimeoutMs && (
-                <p className="form-error" role="alert">
-                  {errors.submitTimeoutMs}
-                </p>
-              )}
+              <p className="form-help">
+                La URL de envío está definida por la aplicación y no puede
+                modificarse.
+              </p>
             </div>
           </section>
 
           <section className="admin-section">
             <h2 className="admin-section__title">Mapeo de parámetros</h2>
             <p className="admin-section__description">
-              Asocie cada campo del formulario con el nombre del parámetro en la API
-              y defina si es obligatorio.
+              Asocie cada campo del formulario con el nombre del parámetro en la
+              API e indique visualmente si se solicita como obligatorio.
+            </p>
+            <p className="form-help">
+              Esta configuración indica visualmente qué campos se solicitan como
+              obligatorios. La validación definitiva se realiza al enviar el
+              formulario.
             </p>
 
             <div className="table-wrapper">

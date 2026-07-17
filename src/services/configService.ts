@@ -1,4 +1,5 @@
 import { CONFIG_STORAGE_KEY, defaultConfig } from '../config/defaultConfig';
+import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import type { AppConfig, ParameterMapping, RequiredFieldsConfig } from '../types';
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -74,8 +75,6 @@ function isLoadableConfig(value: unknown): value is Record<string, unknown> {
 
   return (
     typeof value.countriesApiUrl === 'string' &&
-    typeof value.submitApiUrl === 'string' &&
-    typeof value.submitTimeoutMs === 'number' &&
     isObject(value.parameterMapping)
   );
 }
@@ -94,10 +93,8 @@ export function migrateConfig(stored: Partial<AppConfig> | Record<string, unknow
       typeof source.countriesApiUrl === 'string'
         ? source.countriesApiUrl
         : defaultConfig.countriesApiUrl,
-    submitApiUrl:
-      typeof source.submitApiUrl === 'string'
-        ? source.submitApiUrl
-        : defaultConfig.submitApiUrl,
+    // La URL de envío es fija: nunca se toma del almacenamiento local.
+    submitApiUrl: SUBMIT_WEBHOOK_URL,
     submitTimeoutMs:
       typeof source.submitTimeoutMs === 'number'
         ? source.submitTimeoutMs
@@ -126,7 +123,13 @@ export function loadConfig(): AppConfig {
 }
 
 export function saveConfig(config: AppConfig): void {
-  localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+  localStorage.setItem(
+    CONFIG_STORAGE_KEY,
+    JSON.stringify({
+      ...config,
+      submitApiUrl: SUBMIT_WEBHOOK_URL,
+    }),
+  );
 }
 
 export function resetConfig(): void {

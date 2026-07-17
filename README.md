@@ -90,7 +90,7 @@ En GitHub Pages las rutas usan hash:
 | Ciudad | No | Dependiente del país |
 | Mensaje | Sí | Configurable en `/admin` |
 
-La obligatoriedad de cada campo se configura en `/admin` (columna **Obligatorio**) y se guarda en `localStorage`. No se envía a la API REST.
+La obligatoriedad de cada campo se configura en `/admin` (columna **Obligatorio**) y se guarda en `localStorage`. Controla **únicamente la presentación visual** (asterisco `*` u `Opcional`): no bloquea el envío ni filtra parámetros. La validación definitiva la realiza n8n (HTTP `422`). Esta configuración **no se envía** a la API REST. Todos los campos, incluidos los vacíos, se incluyen siempre en la petición.
 
 ### Predeterminados
 
@@ -100,7 +100,25 @@ nombre: sí, email: no, empresa: no, pais: no, ciudad: no, mensaje: sí
 
 Si Ciudad se marca como obligatoria, País se marca automáticamente y no se puede desmarcar mientras Ciudad lo sea.
 
-Las configuraciones antiguas sin `requiredFields` se migran aplicando estos valores predeterminados sin perder URLs, timeout ni mapeo de parámetros.
+Las configuraciones antiguas sin `requiredFields` se migran aplicando estos valores predeterminados sin perder el mapeo de parámetros. La URL de envío se normaliza siempre al webhook fijo.
+
+## Envío a n8n (webhook fijo)
+
+La URL de envío del formulario es fija y no configurable:
+
+```text
+https://ridon77.app.n8n.cloud/webhook/lead
+```
+
+Definida en `src/config/submitEndpoint.ts` (`SUBMIT_WEBHOOK_URL`).
+
+- No se usa `localStorage`, `/admin` ni `QR_FORM_CONFIG` para elegir otra URL.
+- El envío **no tiene timeout automático** de cliente: la petición espera hasta que n8n responda o falle la red.
+- Se evita el doble envío (doble clic / Enter repetido) con un bloqueo síncrono.
+- HTTP `422` se trata como validación (cuadro empático, formulario conservado).
+- Solo errores técnicos reales (red, CORS, 5xx, etc.) muestran la pantalla de conexión.
+
+**Advertencia:** la URL del webhook es pública en el frontend (no es un secreto).
 
 ## País y ciudad en castellano
 
@@ -141,18 +159,14 @@ Cada navegador y dispositivo tiene su propio `localStorage`. Si alguien escanea 
 Por eso, al abrir el formulario con `source=qr`:
 
 1. La app detecta el marcador.
-2. Sobrescribe `localStorage` con el preset `QR_FORM_CONFIG`.
-3. Aplica de inmediato API de países, webhook de envío, mapeo y obligatoriedad.
+2. Sobrescribe `localStorage` con el preset `QR_FORM_CONFIG` (API de países, mapeo y obligatoriedad).
+3. La URL de envío sigue siendo siempre el webhook fijo.
 4. Elimina `source=qr` de la URL (`replace`) para dejar una ruta limpia.
 5. Un nuevo escaneo vuelve a aplicar el mismo preset.
 
-Además, si en un acceso normal la URL de la API de envío está vacía (o ausente / solo espacios), la aplicación aplica automáticamente `QR_FORM_CONFIG` y la guarda en `localStorage`. Así se evitan errores de conexión en navegadores nuevos o móviles que aún no tienen webhook configurado.
+Un acceso normal **conserva** el mapeo y la obligatoriedad personalizados. La URL de envío no depende del acceso QR.
 
-Un acceso normal con `submitApiUrl` válida **conserva** la configuración personalizada (mapeo, obligatoriedad, etc.).
-
-El acceso QR **siempre** sobrescribe, aunque ya exista una URL válida.
-
-Preset actual (editable en `src/config/qrFormConfig.ts`):
+Preset actual (editable en `src/config/qrFormConfig.ts`, salvo la URL de envío):
 
 | Campo | Parámetro REST | Obligatorio |
 |---|---|---|
@@ -163,9 +177,7 @@ Preset actual (editable en `src/config/qrFormConfig.ts`):
 | Ciudad | `Ciudad` | No |
 | Mensaje | `Mensaje` | Sí |
 
-Webhook de envío del preset: `https://santisola.app.n8n.cloud/webhook/lead?`
-
-**Advertencia:** esa URL de webhook es pública en el frontend (no es un secreto). Cualquiera que escanee el QR o inspeccione el código puede verla.
+Webhook de envío (fijo): `https://ridon77.app.n8n.cloud/webhook/lead`
 
 La URL del QR se construye con `window.location.origin` e `import.meta.env.BASE_URL`, por lo que funciona en:
 
@@ -196,10 +208,10 @@ Publica la aplicación y usa el QR generado desde la página pública. Tras esca
 Desde `/admin` se puede configurar:
 
 - URL de la API de países y ciudades
-- URL de la API de envío
-- Timeout de la petición (milisegundos)
 - Nombre de cada parámetro enviado a la API (nombre, email, empresa, país, ciudad, mensaje)
-- Qué campos del formulario público son **obligatorios**
+- Qué campos del formulario público se muestran visualmente como **obligatorios** (la validación definitiva la hace n8n)
+
+La URL de envío se muestra en solo lectura (webhook fijo). El antiguo timeout de cliente se ha eliminado de la interfaz: el envío espera la respuesta de n8n sin cancelación automática.
 
 Los cambios se guardan con **Guardar configuración** y se pueden restaurar con **Restaurar valores predeterminados**.
 
@@ -224,7 +236,7 @@ Implicaciones:
 ```json
 {
   "countriesApiUrl": "https://countriesnow.space/api/v0.1/countries",
-  "submitApiUrl": "https://api.ejemplo.com/solicitud",
+  "submitApiUrl": "https://ridon77.app.n8n.cloud/webhook/lead",
   "submitTimeoutMs": 10000,
   "parameterMapping": {
     "nombre": "customerName",
@@ -237,15 +249,17 @@ Implicaciones:
 }
 ```
 
+`submitApiUrl` se normaliza al webhook fijo al cargar o guardar. `submitTimeoutMs` se conserva por compatibilidad pero **no cancela** el envío.
+
 ## Ejemplo de URL generada
 
-Con la configuración anterior, un envío podría generar una petición GET como:
+Un envío genera una petición GET como:
 
 ```text
-https://api.ejemplo.com/solicitud?customerName=Joan&customerEmail=joan%40example.com&companyName=Tecnolog%C3%ADa+y+Gesti%C3%B3n%2C+S.L.&customerCountry=Espa%C3%B1a&customerCity=Madrid&customerMessage=Necesito+informaci%C3%B3n
+https://ridon77.app.n8n.cloud/webhook/lead?customerName=Joan&customerEmail=joan%40example.com&companyName=...&customerCountry=Espa%C3%B1a&customerCity=Madrid&customerMessage=...
 ```
 
-Los campos opcionales vacíos también se incluyen en la URL.
+Los nombres de parámetro dependen del mapeo configurado en `/admin`. Los campos opcionales vacíos también se incluyen.
 
 ## Respuesta HTTP 422 (validación)
 
