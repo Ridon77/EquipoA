@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
 import { QR_FORM_CONFIG } from '../config/qrFormConfig';
+import { OFFICIAL_PARAMETER_MAPPING } from '../config/officialParameterMapping';
 import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import { loadConfig, saveConfig } from '../services/configService';
 import type { AppConfig } from '../types';
@@ -117,14 +118,7 @@ describe('applyQrFormConfig', () => {
     );
     expect(config.submitApiUrl).toBe(SUBMIT_WEBHOOK_URL);
     expect(config.submitTimeoutMs).toBe(10000);
-    expect(config.parameterMapping).toEqual({
-      nombre: 'Nombre',
-      email: 'Email',
-      empresa: 'Empresa',
-      pais: 'Pais',
-      ciudad: 'Ciudad',
-      mensaje: 'Mensaje',
-    });
+    expect(config.parameterMapping).toEqual(OFFICIAL_PARAMETER_MAPPING);
     expect(config.requiredFields).toEqual({
       nombre: true,
       email: true,

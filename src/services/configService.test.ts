@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
+import { OFFICIAL_PARAMETER_MAPPING } from '../config/officialParameterMapping';
 import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import {
   loadConfig,
@@ -34,6 +35,7 @@ const customConfig: AppConfig = {
 const normalizedCustomConfig: AppConfig = {
   ...customConfig,
   submitApiUrl: SUBMIT_WEBHOOK_URL,
+  parameterMapping: { ...OFFICIAL_PARAMETER_MAPPING },
 };
 
 describe('configService', () => {
@@ -43,9 +45,10 @@ describe('configService', () => {
 
   it('recupera DEFAULT_CONFIG si no hay localStorage', () => {
     expect(loadConfig()).toEqual(DEFAULT_CONFIG);
+    expect(loadConfig().parameterMapping).toEqual(OFFICIAL_PARAMETER_MAPPING);
   });
 
-  it('guarda configuración forzando SUBMIT_WEBHOOK_URL', () => {
+  it('guarda configuración forzando URL y mapeo oficiales', () => {
     saveConfig(customConfig);
 
     expect(localStorage.getItem(CONFIG_STORAGE_KEY)).toBe(
@@ -53,7 +56,7 @@ describe('configService', () => {
     );
   });
 
-  it('recupera configuración guardada con URL fija', () => {
+  it('recupera configuración guardada con mapeo oficial', () => {
     saveConfig(customConfig);
 
     expect(loadConfig()).toEqual(normalizedCustomConfig);
@@ -73,17 +76,17 @@ describe('configService', () => {
     expect(loadConfig()).toEqual(DEFAULT_CONFIG);
   });
 
-  it('migra configuraciones antiguas normalizando la URL de envío', () => {
+  it('migra configuraciones antiguas al mapeo oficial y persiste', () => {
     const legacyStored = {
       countriesApiUrl: 'https://legacy.example.com/countries',
       submitApiUrl: 'https://legacy.example.com/submit',
       submitTimeoutMs: 8000,
       parameterMapping: {
-        nombre: 'name',
-        email: 'mail',
-        pais: 'country',
-        ciudad: 'city',
-        mensaje: 'request',
+        nombre: 'nombre',
+        email: 'email',
+        pais: 'pais',
+        ciudad: 'ciudad',
+        mensaje: 'mensaje',
       },
     };
 
@@ -93,15 +96,16 @@ describe('configService', () => {
       countriesApiUrl: legacyStored.countriesApiUrl,
       submitApiUrl: SUBMIT_WEBHOOK_URL,
       submitTimeoutMs: legacyStored.submitTimeoutMs,
-      parameterMapping: {
-        ...legacyStored.parameterMapping,
-        empresa: 'empresa',
-      },
+      parameterMapping: { ...OFFICIAL_PARAMETER_MAPPING },
       requiredFields: DEFAULT_CONFIG.requiredFields,
     });
+
+    const persisted = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) ?? '{}');
+    expect(persisted.parameterMapping).toEqual(OFFICIAL_PARAMETER_MAPPING);
+    expect(persisted.submitApiUrl).toBe(SUBMIT_WEBHOOK_URL);
   });
 
-  it('conserva empresa personalizada al migrar', () => {
+  it('normaliza empresa personalizada al valor oficial', () => {
     const migrated = migrateConfig({
       parameterMapping: {
         nombre: 'name',
@@ -113,7 +117,8 @@ describe('configService', () => {
       },
     });
 
-    expect(migrated.parameterMapping.empresa).toBe('companyName');
+    expect(migrated.parameterMapping.empresa).toBe('Empresa');
+    expect(migrated.parameterMapping).toEqual(OFFICIAL_PARAMETER_MAPPING);
     expect(migrated.submitApiUrl).toBe(SUBMIT_WEBHOOK_URL);
   });
 

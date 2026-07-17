@@ -1,4 +1,5 @@
 import type { AppConfig } from '../types';
+import { OFFICIAL_PARAMETER_MAPPING } from './officialParameterMapping';
 import { SUBMIT_WEBHOOK_URL } from './submitEndpoint';
 
 export const defaultConfig: AppConfig = {
@@ -6,14 +7,7 @@ export const defaultConfig: AppConfig = {
   submitApiUrl: SUBMIT_WEBHOOK_URL,
   /** Ignorado: el envío ya no usa timeout de cliente. Conservado por compatibilidad. */
   submitTimeoutMs: 10000,
-  parameterMapping: {
-    nombre: 'nombre',
-    email: 'email',
-    empresa: 'empresa',
-    pais: 'pais',
-    ciudad: 'ciudad',
-    mensaje: 'mensaje',
-  },
+  parameterMapping: { ...OFFICIAL_PARAMETER_MAPPING },
   requiredFields: {
     nombre: true,
     email: false,

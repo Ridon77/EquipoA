@@ -1,4 +1,5 @@
 import type { AppConfig, ParameterMapping, RequiredFieldsConfig } from '../types';
+import { normalizeParameterMapping } from '../utils/normalizeParameterMapping';
 
 const URL_PATTERN = /^https?:\/\/.+/;
 
@@ -50,14 +51,14 @@ export function trimAdminConfig(config: AppConfig): AppConfig {
     countriesApiUrl: config.countriesApiUrl.trim(),
     submitApiUrl: config.submitApiUrl,
     submitTimeoutMs: config.submitTimeoutMs,
-    parameterMapping: {
+    parameterMapping: normalizeParameterMapping({
       nombre: config.parameterMapping.nombre.trim(),
       email: config.parameterMapping.email.trim(),
       empresa: config.parameterMapping.empresa.trim(),
       pais: config.parameterMapping.pais.trim(),
       ciudad: config.parameterMapping.ciudad.trim(),
       mensaje: config.parameterMapping.mensaje.trim(),
-    },
+    }),
     requiredFields,
   };
 }

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CONFIG_STORAGE_KEY, DEFAULT_CONFIG } from '../config/defaultConfig';
+import { OFFICIAL_PARAMETER_MAPPING } from '../config/officialParameterMapping';
 import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import { AdminPage } from './AdminPage';
 
@@ -67,19 +68,19 @@ describe('AdminPage', () => {
     ).not.toBeChecked();
   });
 
-  it('permite modificar el parámetro de empresa', async () => {
-    const user = userEvent.setup();
-
+  it('muestra el mapeo oficial de parámetros', () => {
     renderAdminPage();
 
-    const empresaInput = screen.getByLabelText(/Parámetro para Empresa/i);
-    await user.clear(empresaInput);
-    await user.type(empresaInput, 'companyName');
-
-    expect(empresaInput).toHaveValue('companyName');
+    expect(screen.getByLabelText(/Parámetro para Nombre/i)).toHaveValue(
+      OFFICIAL_PARAMETER_MAPPING.nombre,
+    );
+    expect(screen.getByLabelText(/Parámetro para País/i)).toHaveValue('Pais');
+    expect(screen.getByLabelText(/Parámetro para Empresa/i)).toHaveValue(
+      'Empresa',
+    );
   });
 
-  it('guarda y recupera el parámetro de empresa y requiredFields', async () => {
+  it('al guardar normaliza el parámetro de empresa al valor oficial', async () => {
     const user = userEvent.setup();
 
     renderAdminPage();
@@ -95,9 +96,10 @@ describe('AdminPage', () => {
     ).toBeInTheDocument();
 
     const stored = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) ?? '{}');
-    expect(stored.parameterMapping.empresa).toBe('companyName');
+    expect(stored.parameterMapping).toEqual(OFFICIAL_PARAMETER_MAPPING);
     expect(stored.requiredFields.empresa).toBe(true);
     expect(stored.requiredFields.nombre).toBe(true);
+    expect(empresaInput).toHaveValue('Empresa');
   });
 
   it('marca País automáticamente al marcar Ciudad', async () => {

@@ -1,40 +1,10 @@
 import { CONFIG_STORAGE_KEY, defaultConfig } from '../config/defaultConfig';
 import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
-import type { AppConfig, ParameterMapping, RequiredFieldsConfig } from '../types';
+import { normalizeParameterMapping } from '../utils/normalizeParameterMapping';
+import type { AppConfig, RequiredFieldsConfig } from '../types';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
-}
-
-function migrateParameterMapping(stored: unknown): ParameterMapping {
-  const source = isObject(stored) ? stored : {};
-
-  return {
-    nombre:
-      typeof source.nombre === 'string'
-        ? source.nombre
-        : defaultConfig.parameterMapping.nombre,
-    email:
-      typeof source.email === 'string'
-        ? source.email
-        : defaultConfig.parameterMapping.email,
-    empresa:
-      typeof source.empresa === 'string'
-        ? source.empresa
-        : defaultConfig.parameterMapping.empresa,
-    pais:
-      typeof source.pais === 'string'
-        ? source.pais
-        : defaultConfig.parameterMapping.pais,
-    ciudad:
-      typeof source.ciudad === 'string'
-        ? source.ciudad
-        : defaultConfig.parameterMapping.ciudad,
-    mensaje:
-      typeof source.mensaje === 'string'
-        ? source.mensaje
-        : defaultConfig.parameterMapping.mensaje,
-  };
 }
 
 function migrateRequiredFields(stored: unknown): RequiredFieldsConfig {
@@ -79,6 +49,23 @@ function isLoadableConfig(value: unknown): value is Record<string, unknown> {
   );
 }
 
+function mappingsDiffer(
+  left: AppConfig['parameterMapping'],
+  right: unknown,
+): boolean {
+  if (!isObject(right)) {
+    return true;
+  }
+
+  for (const key of Object.keys(left) as (keyof AppConfig['parameterMapping'])[]) {
+    if (right[key] !== left[key]) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function migrateConfig(stored: Partial<AppConfig> | Record<string, unknown>): AppConfig {
   const source = isObject(stored) ? stored : {};
   const requiredFields = migrateRequiredFields(source.requiredFields);
@@ -99,7 +86,11 @@ export function migrateConfig(stored: Partial<AppConfig> | Record<string, unknow
       typeof source.submitTimeoutMs === 'number'
         ? source.submitTimeoutMs
         : defaultConfig.submitTimeoutMs,
-    parameterMapping: migrateParameterMapping(source.parameterMapping),
+    parameterMapping: normalizeParameterMapping(
+      isObject(source.parameterMapping)
+        ? (source.parameterMapping as unknown as AppConfig['parameterMapping'])
+        : undefined,
+    ),
     requiredFields,
   };
 }
@@ -113,7 +104,16 @@ export function loadConfig(): AppConfig {
 
     const parsed: unknown = JSON.parse(stored);
     if (isLoadableConfig(parsed)) {
-      return migrateConfig(parsed);
+      const migrated = migrateConfig(parsed);
+
+      if (
+        mappingsDiffer(migrated.parameterMapping, parsed.parameterMapping) ||
+        parsed.submitApiUrl !== SUBMIT_WEBHOOK_URL
+      ) {
+        saveConfig(migrated);
+      }
+
+      return migrated;
     }
   } catch {
     // Fall back to default configuration.
@@ -128,6 +128,7 @@ export function saveConfig(config: AppConfig): void {
     JSON.stringify({
       ...config,
       submitApiUrl: SUBMIT_WEBHOOK_URL,
+      parameterMapping: normalizeParameterMapping(config.parameterMapping),
     }),
   );
 }

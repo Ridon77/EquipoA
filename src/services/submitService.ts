@@ -1,6 +1,7 @@
 import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import type { AppConfig, ApiResult, FormData, ParameterMapping } from '../types';
 import { normalizeFieldList } from '../utils/normalizeFieldList';
+import { normalizeParameterMapping } from '../utils/normalizeParameterMapping';
 import { loadConfig } from './configService';
 
 const GENERIC_PROCESS_ERROR = 'No ha sido posible procesar la solicitud.';
@@ -11,19 +12,20 @@ interface ParsedResponseBody {
   text: string;
 }
 
-/** Construye la URL de envío con la constante fija y el mapeo configurable. */
+/** Construye la URL de envío con la constante fija y el mapeo oficial. */
 export function buildSubmitUrl(
   formData: FormData,
-  mapping: ParameterMapping,
+  mapping: ParameterMapping = normalizeParameterMapping(),
 ): string {
+  const officialMapping = normalizeParameterMapping(mapping);
   const url = new URL(SUBMIT_WEBHOOK_URL);
 
-  url.searchParams.set(mapping.nombre, formData.nombre);
-  url.searchParams.set(mapping.email, formData.email);
-  url.searchParams.set(mapping.empresa, formData.empresa);
-  url.searchParams.set(mapping.pais, formData.pais);
-  url.searchParams.set(mapping.ciudad, formData.ciudad);
-  url.searchParams.set(mapping.mensaje, formData.mensaje);
+  url.searchParams.set(officialMapping.nombre, formData.nombre);
+  url.searchParams.set(officialMapping.email, formData.email);
+  url.searchParams.set(officialMapping.empresa, formData.empresa);
+  url.searchParams.set(officialMapping.pais, formData.pais);
+  url.searchParams.set(officialMapping.ciudad, formData.ciudad);
+  url.searchParams.set(officialMapping.mensaje, formData.mensaje);
 
   return url.toString();
 }

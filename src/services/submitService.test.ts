@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_CONFIG } from '../config/defaultConfig';
+import { OFFICIAL_PARAMETER_MAPPING } from '../config/officialParameterMapping';
 import { SUBMIT_WEBHOOK_URL } from '../config/submitEndpoint';
 import type { AppConfig, FormData } from '../types';
 import { buildSubmitUrl, submitForm } from './submitService';
@@ -13,87 +14,95 @@ const formData: FormData = {
   mensaje: 'Solicitud con espacios',
 };
 
-const customMapping = {
-  nombre: 'customerName',
-  email: 'customerEmail',
-  empresa: 'companyName',
-  pais: 'customerCountry',
-  ciudad: 'customerCity',
-  mensaje: 'customerMessage',
-};
-
 const testConfig: AppConfig = {
   ...DEFAULT_CONFIG,
   submitApiUrl: 'https://api.example.com/solicitud',
   submitTimeoutMs: 100,
-  parameterMapping: customMapping,
+  parameterMapping: {
+    nombre: 'customerName',
+    email: 'customerEmail',
+    empresa: 'companyName',
+    pais: 'customerCountry',
+    ciudad: 'customerCity',
+    mensaje: 'customerMessage',
+  },
 };
 
 describe('buildSubmitUrl', () => {
   it('usa siempre SUBMIT_WEBHOOK_URL', () => {
-    const url = buildSubmitUrl(formData, customMapping);
+    const url = buildSubmitUrl(formData);
 
     expect(url.startsWith(`${SUBMIT_WEBHOOK_URL}?`)).toBe(true);
     expect(url).not.toContain('api.example.com');
   });
 
-  it('usa nombres configurados', () => {
-    const url = buildSubmitUrl(formData, customMapping);
+  it('usa el mapeo oficial con mayúscula inicial', () => {
+    const url = buildSubmitUrl(formData, testConfig.parameterMapping);
 
-    expect(url).toContain('customerName=');
-    expect(url).toContain('customerEmail=');
-    expect(url).toContain('companyName=');
-    expect(url).toContain('customerCountry=');
-    expect(url).toContain('customerCity=');
-    expect(url).toContain('customerMessage=');
+    expect(url).toContain('Nombre=');
+    expect(url).toContain('Email=');
+    expect(url).toContain('Empresa=');
+    expect(url).toContain('Pais=');
+    expect(url).toContain('Ciudad=');
+    expect(url).toContain('Mensaje=');
+    expect(url).not.toContain('nombre=');
+    expect(url).not.toContain('customerName=');
   });
 
   it('codifica espacios', () => {
-    const url = buildSubmitUrl(formData, customMapping);
+    const url = buildSubmitUrl(formData);
 
-    expect(url).toContain('customerMessage=Solicitud+con+espacios');
+    expect(url).toContain('Mensaje=Solicitud+con+espacios');
   });
 
   it('no genera ??', () => {
-    const url = buildSubmitUrl(formData, {
-      nombre: 'Nombre',
-      email: 'Email',
-      empresa: 'Empresa',
-      pais: 'Pais',
-      ciudad: 'Ciudad',
-      mensaje: 'Mensaje',
-    });
+    const url = buildSubmitUrl(formData);
 
     expect(url).not.toContain('??');
     expect(url.startsWith(`${SUBMIT_WEBHOOK_URL}?`)).toBe(true);
   });
 
   it('codifica arrobas', () => {
-    const url = buildSubmitUrl(formData, customMapping);
+    const url = buildSubmitUrl(formData);
 
-    expect(url).toContain('customerEmail=joan%40example.com');
+    expect(url).toContain('Email=joan%40example.com');
   });
 
   it('codifica acentos y caracteres especiales de empresa', () => {
-    const url = new URL(buildSubmitUrl(formData, customMapping));
+    const url = new URL(buildSubmitUrl(formData));
 
-    expect(url.searchParams.get('customerName')).toBe('Joan García');
-    expect(url.searchParams.get('customerCountry')).toBe('España');
-    expect(url.searchParams.get('companyName')).toBe(
+    expect(url.searchParams.get('Nombre')).toBe('Joan García');
+    expect(url.searchParams.get('Pais')).toBe('España');
+    expect(url.searchParams.get('Empresa')).toBe(
       'Tecnología y Gestión, S.L.',
     );
   });
 
-  it('incluye campos vacíos', () => {
-    const url = buildSubmitUrl(formData, customMapping);
+  it('incluye campos vacíos con claves oficiales', () => {
+    const url = buildSubmitUrl(formData);
 
-    expect(url).toContain('customerCity=');
+    expect(url).toContain('Ciudad=');
+    expect(new URL(url).searchParams.has('Ciudad')).toBe(true);
   });
 
   it('incluye empresa aunque esté vacía', () => {
-    const url = buildSubmitUrl({ ...formData, empresa: '' }, customMapping);
+    const url = buildSubmitUrl({ ...formData, empresa: '' });
 
-    expect(url).toContain('companyName=');
+    expect(url).toContain('Empresa=');
+  });
+
+  it('ignora un mapeo personalizado en minúscula', () => {
+    const url = buildSubmitUrl(formData, {
+      nombre: 'nombre',
+      email: 'email',
+      empresa: 'empresa',
+      pais: 'pais',
+      ciudad: 'ciudad',
+      mensaje: 'mensaje',
+    });
+
+    expect(url).toContain(`${OFFICIAL_PARAMETER_MAPPING.nombre}=`);
+    expect(url).not.toMatch(/[?&]nombre=/);
   });
 });
 
@@ -129,6 +138,7 @@ describe('submitForm', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     const calledUrl = String(vi.mocked(fetch).mock.calls[0]?.[0]);
     expect(calledUrl.startsWith(`${SUBMIT_WEBHOOK_URL}?`)).toBe(true);
+    expect(calledUrl).toContain('Nombre=');
     expect(calledUrl).not.toContain('otro-dominio');
   });
 
@@ -140,7 +150,12 @@ describe('submitForm', () => {
       submitApiUrl: '',
     });
 
-    expect(result).toEqual({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
+    expect(result).toEqual({
+      kind: 'success',
+      message: '',
+      advisorName: '',
+      advisorEmail: '',
+    });
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
@@ -184,7 +199,12 @@ describe('submitForm', () => {
 
     const result = await submitForm(formData, testConfig);
 
-    expect(result).toEqual({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
+    expect(result).toEqual({
+      kind: 'success',
+      message: '',
+      advisorName: '',
+      advisorEmail: '',
+    });
   });
 
   it('clasifica HTTP 200 como success', async () => {
@@ -192,7 +212,12 @@ describe('submitForm', () => {
 
     const result = await submitForm(formData, testConfig);
 
-    expect(result).toEqual({ kind: 'success', message: '', advisorName: '', advisorEmail: '' });
+    expect(result).toEqual({
+      kind: 'success',
+      message: '',
+      advisorName: '',
+      advisorEmail: '',
+    });
   });
 
   it('clasifica HTTP 200 con ok true y datos de asesor', async () => {

@@ -37,7 +37,7 @@ describe('validateAdminConfig', () => {
     expect(errors.submitApiUrl).toBeUndefined();
   });
 
-  it('rechaza parámetros duplicados', () => {
+  it('rechaza parámetros duplicados se normalizan al mapeo oficial', () => {
     const errors = validateAdminConfig({
       ...validConfig,
       parameterMapping: {
@@ -50,15 +50,10 @@ describe('validateAdminConfig', () => {
       },
     });
 
-    expect(errors.parameterMapping?.nombre).toBe(
-      'Los nombres de parámetro no pueden repetirse.',
-    );
-    expect(errors.parameterMapping?.email).toBe(
-      'Los nombres de parámetro no pueden repetirse.',
-    );
+    expect(errors.parameterMapping).toBeUndefined();
   });
 
-  it('rechaza duplicado entre nombre y empresa', () => {
+  it('normaliza duplicados entre nombre y empresa al mapeo oficial', () => {
     const errors = validateAdminConfig({
       ...validConfig,
       parameterMapping: {
@@ -71,15 +66,10 @@ describe('validateAdminConfig', () => {
       },
     });
 
-    expect(errors.parameterMapping?.nombre).toBe(
-      'Los nombres de parámetro no pueden repetirse.',
-    );
-    expect(errors.parameterMapping?.empresa).toBe(
-      'Los nombres de parámetro no pueden repetirse.',
-    );
+    expect(errors.parameterMapping).toBeUndefined();
   });
 
-  it('rechaza parámetro empresa vacío', () => {
+  it('normaliza parámetro empresa vacío al valor oficial', () => {
     const errors = validateAdminConfig({
       ...validConfig,
       parameterMapping: {
@@ -88,9 +78,7 @@ describe('validateAdminConfig', () => {
       },
     });
 
-    expect(errors.parameterMapping?.empresa).toBe(
-      'El nombre del parámetro es obligatorio.',
-    );
+    expect(errors.parameterMapping).toBeUndefined();
   });
 
   it('acepta configuración válida', () => {

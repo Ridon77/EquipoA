@@ -425,7 +425,7 @@ describe('HomePage', () => {
     expect(screen.getByLabelText(/^Email/i)).not.toBeRequired();
   });
 
-  it('conserva configuración personalizada válida en acceso normal', async () => {
+  it('conserva obligatoriedad personalizada y normaliza el mapeo', async () => {
     const custom = {
       ...DEFAULT_CONFIG,
       submitApiUrl: 'https://custom.example/webhook',
@@ -447,6 +447,7 @@ describe('HomePage', () => {
     expect(loadConfig()).toEqual({
       ...custom,
       submitApiUrl: SUBMIT_WEBHOOK_URL,
+      parameterMapping: DEFAULT_CONFIG.parameterMapping,
     });
     expect(screen.getByLabelText(/^Email/i)).toBeRequired();
     expect(screen.getByLabelText(/^Empresa/i)).toBeRequired();

@@ -208,7 +208,7 @@ Publica la aplicación y usa el QR generado desde la página pública. Tras esca
 Desde `/admin` se puede configurar:
 
 - URL de la API de países y ciudades
-- Nombre de cada parámetro enviado a la API (nombre, email, empresa, país, ciudad, mensaje)
+- Nombre de cada parámetro enviado a la API (siempre con mayúscula inicial: `Nombre`, `Email`, `Empresa`, `Pais`, `Ciudad`, `Mensaje`)
 - Qué campos del formulario público se muestran visualmente como **obligatorios** (la validación definitiva la hace n8n)
 
 La URL de envío se muestra en solo lectura (webhook fijo). El antiguo timeout de cliente se ha eliminado de la interfaz: el envío espera la respuesta de n8n sin cancelación automática.
@@ -239,27 +239,45 @@ Implicaciones:
   "submitApiUrl": "https://ridon77.app.n8n.cloud/webhook/lead",
   "submitTimeoutMs": 10000,
   "parameterMapping": {
-    "nombre": "customerName",
-    "email": "customerEmail",
-    "empresa": "companyName",
-    "pais": "customerCountry",
-    "ciudad": "customerCity",
-    "mensaje": "customerMessage"
+    "nombre": "Nombre",
+    "email": "Email",
+    "empresa": "Empresa",
+    "pais": "Pais",
+    "ciudad": "Ciudad",
+    "mensaje": "Mensaje"
   }
 }
 ```
 
 `submitApiUrl` se normaliza al webhook fijo al cargar o guardar. `submitTimeoutMs` se conserva por compatibilidad pero **no cancela** el envío.
 
+### Parámetros REST (mayúscula inicial)
+
+Los nombres enviados a n8n son fijos (`OFFICIAL_PARAMETER_MAPPING` en `src/config/officialParameterMapping.ts`):
+
+```text
+Nombre
+Email
+Empresa
+Pais
+Ciudad
+Mensaje
+```
+
+- Se usa **mayúscula inicial**, no todo en mayúsculas.
+- El parámetro de país es `Pais` **sin tilde** (distinto del literal visible «País»).
+- n8n trata `nombre`, `Nombre` y `NOMBRE` como claves distintas.
+- Las configuraciones antiguas en minúscula se migran automáticamente al cargar.
+
 ## Ejemplo de URL generada
 
 Un envío genera una petición GET como:
 
 ```text
-https://ridon77.app.n8n.cloud/webhook/lead?customerName=Joan&customerEmail=joan%40example.com&companyName=...&customerCountry=Espa%C3%B1a&customerCity=Madrid&customerMessage=...
+https://ridon77.app.n8n.cloud/webhook/lead?Nombre=Joan&Email=joan%40example.com&Empresa=...&Pais=Espa%C3%B1a&Ciudad=Madrid&Mensaje=...
 ```
 
-Los nombres de parámetro dependen del mapeo configurado en `/admin`. Los campos opcionales vacíos también se incluyen.
+Los nombres de parámetro son siempre los oficiales. Los campos opcionales vacíos también se incluyen.
 
 Cuando el webhook responde con éxito (`ok: true`), la aplicación muestra una página de confirmación con el mensaje, el asesor (`Asesor`) y el correo (`email_asesor`) si son válidos.
 

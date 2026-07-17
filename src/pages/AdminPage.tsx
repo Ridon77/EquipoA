@@ -212,8 +212,10 @@ export function AdminPage() {
           <section className="admin-section">
             <h2 className="admin-section__title">Mapeo de parámetros</h2>
             <p className="admin-section__description">
-              Asocie cada campo del formulario con el nombre del parámetro en la
-              API e indique visualmente si se solicita como obligatorio.
+              Los nombres de parámetro enviados a n8n usan mayúscula inicial
+              (`Nombre`, `Email`, `Empresa`, `Pais`, `Ciudad`, `Mensaje`). País
+              visible ≠ parámetro REST (`Pais` sin tilde). Al guardar se
+              normalizan automáticamente.
             </p>
             <p className="form-help">
               Esta configuración indica visualmente qué campos se solicitan como
