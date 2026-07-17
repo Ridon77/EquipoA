@@ -128,6 +128,72 @@ describe('HomePage', () => {
     expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('Acme S.L.');
   });
 
+  it('muestra resumen 422 y conserva todos los datos', async () => {
+    vi.mocked(submitForm).mockResolvedValue({
+      kind: 'validationError',
+      status: 422,
+      message: 'Revise los datos indicados.',
+      missingFields: ['Nombre', 'Mensaje'],
+      invalidFields: ['Email'],
+    });
+
+    const user = userEvent.setup();
+
+    renderHomePage();
+    await waitForForm();
+
+    await user.type(screen.getByLabelText(/^Nombre/i), 'Joan');
+    await user.type(screen.getByLabelText(/^Email/i), 'joan@example.com');
+    await user.type(screen.getByLabelText(/^Empresa/i), 'Acme S.L.');
+    await user.type(screen.getByLabelText(/^País/i), 'España');
+    await user.click(await screen.findByRole('option', { name: 'España' }));
+    await user.type(screen.getByLabelText(/^Ciudad/i), 'Madrid');
+    await user.click(await screen.findByRole('option', { name: 'Madrid' }));
+    await user.type(screen.getByLabelText(/^Solicitud/i), 'Necesito ayuda');
+    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Necesitamos que revise algunos datos',
+      }),
+    ).toBeInTheDocument();
+
+    const summary = document.getElementById('validation-summary');
+    expect(summary).toHaveFocus();
+    expect(
+      screen.queryByText(TECHNICAL_ERROR_MESSAGE),
+    ).not.toBeInTheDocument();
+
+    expect(screen.getByLabelText(/^Nombre/i)).toHaveValue('Joan');
+    expect(screen.getByLabelText(/^Email/i)).toHaveValue('joan@example.com');
+    expect(screen.getByLabelText(/^Empresa/i)).toHaveValue('Acme S.L.');
+    expect(screen.getByLabelText(/^País/i)).toHaveValue('España');
+    expect(screen.getByLabelText(/^Ciudad/i)).toHaveValue('Madrid');
+    expect(screen.getByLabelText(/^Solicitud/i)).toHaveValue('Necesito ayuda');
+
+    expect(screen.getByLabelText(/^Nombre/i)).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    expect(screen.getByLabelText(/^Email/i)).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    expect(screen.getAllByText('Este campo es obligatorio.')).toHaveLength(2);
+    expect(
+      screen.getByText('Introduzca una dirección de correo válida.'),
+    ).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled();
+
+    vi.mocked(submitForm).mockResolvedValue({ kind: 'success' });
+    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+    expect(
+      await screen.findByText('La solicitud se ha procesado correctamente.'),
+    ).toBeInTheDocument();
+  });
+
   it('muestra el mensaje obligatorio en error técnico', async () => {
     vi.mocked(submitForm).mockResolvedValue({ kind: 'technicalError' });
 

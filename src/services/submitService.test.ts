@@ -179,15 +179,50 @@ describe('submitForm', () => {
     });
   });
 
-  it('clasifica HTTP 422 como process-error', async () => {
-    mockFetchResponse(422, { detail: 'Validación fallida' });
+  it('clasifica HTTP 422 como validation-error', async () => {
+    mockFetchResponse(422, {
+      ok: false,
+      Error: 'Faltan campos obligatorios o existen campos con formato incorrecto.',
+      Campos_miss: ['Nombre', 'Mensaje', 'Nombre', '', null],
+      campos_incorrectos: ['Email', '  Email  '],
+    });
 
     const result = await submitForm(formData, testConfig);
 
     expect(result).toEqual({
-      kind: 'processError',
-      message: 'Validación fallida',
+      kind: 'validationError',
+      status: 422,
+      message:
+        'Faltan campos obligatorios o existen campos con formato incorrecto.',
+      missingFields: ['Nombre', 'Mensaje'],
+      invalidFields: ['Email'],
     });
+  });
+
+  it('clasifica HTTP 422 sin colecciones como validation-error vacío', async () => {
+    mockFetchResponse(422, { Error: 'Revise los datos indicados.' });
+
+    const result = await submitForm(formData, testConfig);
+
+    expect(result).toEqual({
+      kind: 'validationError',
+      status: 422,
+      message: 'Revise los datos indicados.',
+      missingFields: [],
+      invalidFields: [],
+    });
+  });
+
+  it('no clasifica HTTP 422 como technical-error', async () => {
+    mockFetchResponse(422, {
+      Campos_miss: null,
+      campos_incorrectos: undefined,
+    });
+
+    const result = await submitForm(formData, testConfig);
+
+    expect(result.kind).toBe('validationError');
+    expect(result).not.toEqual({ kind: 'technicalError' });
   });
 
   it('clasifica HTTP 404 como technical-error', async () => {

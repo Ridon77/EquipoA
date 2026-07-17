@@ -247,6 +247,29 @@ https://api.ejemplo.com/solicitud?customerName=Joan&customerEmail=joan%40example
 
 Los campos opcionales vacíos también se incluyen en la URL.
 
+## Respuesta HTTP 422 (validación)
+
+Cuando el webhook de n8n responde con `422 Unprocessable Entity`, la aplicación **no** muestra la pantalla de error de conexión. Conserva el formulario y todos los datos introducidos, y muestra un cuadro de validación encima del formulario.
+
+Ejemplo de cuerpo esperado:
+
+```json
+{
+  "ok": false,
+  "Error": "Revise los datos indicados.",
+  "Campos_miss": ["Nombre", "Mensaje"],
+  "campos_incorrectos": ["Email"]
+}
+```
+
+| Campo API | Significado |
+|---|---|
+| `Campos_miss` | Campos obligatorios que faltan |
+| `campos_incorrectos` | Campos con formato incorrecto |
+| `Error` | Mensaje general (opcional) |
+
+Los nombres de n8n se asocian a los campos del formulario (`Nombre` → nombre, `Email` → email, `Empresa` → empresa, `Pais`/`País` → país, `Ciudad` → ciudad, `Mensaje` → mensaje). Además del resumen, los campos conocidos quedan marcados con `aria-invalid` y un mensaje debajo.
+
 ## Advertencia sobre CORS
 
 Las APIs configuradas (países y envío) deben **permitir peticiones CORS** desde el origen del navegador donde se ejecuta la aplicación. Si la API no lo permite, el navegador bloqueará la petición y se mostrará un error técnico.

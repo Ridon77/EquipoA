@@ -36,6 +36,13 @@ export interface AppConfig {
 export type ApiResult =
   | { kind: 'success' }
   | { kind: 'processError'; message: string }
+  | {
+      kind: 'validationError';
+      status: 422;
+      message: string;
+      missingFields: string[];
+      invalidFields: string[];
+    }
   | { kind: 'technicalError' };
 
 export type ViewState = 'form' | 'success' | 'technicalError';

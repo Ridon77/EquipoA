@@ -2,10 +2,16 @@ import { useEffect, useRef } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { CountryCitySelector } from './CountryCitySelector';
 import { ProcessErrorBanner } from './ProcessErrorBanner';
+import { ValidationSummary } from './ValidationSummary';
 import type { FormData, RequiredFieldsConfig } from '../types';
 import type { CountryOption } from '../types/countries';
 import type { FormErrors } from '../validation';
 import { formFieldOrder } from '../validation';
+
+export interface ApiValidationSummary {
+  missingFields: string[];
+  invalidFields: string[];
+}
 
 interface FormViewProps {
   formData: FormData;
@@ -19,6 +25,7 @@ interface FormViewProps {
   onSubmit: () => void;
   isSubmitting?: boolean;
   processError?: string;
+  validationError?: ApiValidationSummary;
 }
 
 function FieldLabel({
@@ -57,6 +64,7 @@ export function FormView({
   onSubmit,
   isSubmitting = false,
   processError,
+  validationError,
 }: FormViewProps) {
   const fieldRefs = {
     nombre: useRef<HTMLInputElement>(null),
@@ -68,13 +76,18 @@ export function FormView({
   };
 
   useEffect(() => {
+    // Ante un 422, el foco va al resumen; no al primer campo.
+    if (validationError) {
+      return;
+    }
+
     for (const field of formFieldOrder) {
       if (errors[field]) {
         fieldRefs[field].current?.focus();
         break;
       }
     }
-  }, [errors]);
+  }, [errors, validationError]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -91,7 +104,15 @@ export function FormView({
 
   return (
     <form className="form-layout" onSubmit={handleSubmit} noValidate>
-      {processError && <ProcessErrorBanner message={processError} />}
+      {validationError && (
+        <ValidationSummary
+          missingFields={validationError.missingFields}
+          invalidFields={validationError.invalidFields}
+        />
+      )}
+      {!validationError && processError && (
+        <ProcessErrorBanner message={processError} />
+      )}
 
       <p className="form-help form-required-legend">
         Los campos marcados con * son obligatorios.

@@ -512,6 +512,77 @@ a:hover {
   color: var(--ea-warning);
 }
 
+.validation-summary {
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+  color: var(--ea-text);
+}
+
+.validation-summary__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: #fef0c7;
+  color: var(--ea-warning);
+}
+
+.validation-summary__content {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.validation-summary__title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ea-navy);
+  line-height: 1.35;
+}
+
+.validation-summary__intro,
+.validation-summary__footer,
+.validation-summary__section-title {
+  margin: 0;
+  color: var(--ea-text);
+  font-size: 0.9375rem;
+}
+
+.validation-summary__footer {
+  color: var(--ea-text-muted);
+}
+
+.validation-summary__section {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.validation-summary__section-title {
+  font-weight: 600;
+  color: var(--ea-navy);
+}
+
+.validation-summary__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.validation-summary__item {
+  color: var(--ea-text);
+}
+
+.validation-summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(181, 71, 8, 0.25);
+}
+
 .status-panel--info {
   border-color: #b9e6fe;
   background: #f0f9ff;

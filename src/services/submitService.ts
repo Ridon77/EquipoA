@@ -1,7 +1,9 @@
 import type { AppConfig, ApiResult, FormData, ParameterMapping } from '../types';
+import { normalizeFieldList } from '../utils/normalizeFieldList';
 import { loadConfig } from './configService';
 
 const GENERIC_PROCESS_ERROR = 'No ha sido posible procesar la solicitud.';
+const DEFAULT_VALIDATION_MESSAGE = 'Revise los datos indicados.';
 
 interface ParsedResponseBody {
   json: unknown | null;
@@ -41,20 +43,56 @@ async function parseResponseBody(response: Response): Promise<ParsedResponseBody
   }
 }
 
+function asRecord(json: unknown): Record<string, unknown> | null {
+  if (typeof json !== 'object' || json === null) {
+    return null;
+  }
+
+  return json as Record<string, unknown>;
+}
+
+function firstStringField(
+  body: Record<string, unknown> | null,
+  keys: string[],
+): string | undefined {
+  if (!body) {
+    return undefined;
+  }
+
+  for (const key of keys) {
+    const value = body[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return undefined;
+}
+
+function firstArrayField(
+  body: Record<string, unknown> | null,
+  keys: string[],
+): unknown {
+  if (!body) {
+    return undefined;
+  }
+
+  for (const key of keys) {
+    if (key in body) {
+      return body[key];
+    }
+  }
+
+  return undefined;
+}
+
 function extractProcessMessage(json: unknown, text: string): string {
-  if (typeof json === 'object' && json !== null) {
-    const body = json as Record<string, unknown>;
+  const body = asRecord(json);
 
-    if (typeof body.error === 'string' && body.error.trim()) {
-      return body.error.trim();
-    }
-
-    if (typeof body.message === 'string' && body.message.trim()) {
-      return body.message.trim();
-    }
-
-    if (typeof body.detail === 'string' && body.detail.trim()) {
-      return body.detail.trim();
+  if (body) {
+    const message = firstStringField(body, ['error', 'message', 'detail', 'Error']);
+    if (message) {
+      return message;
     }
   }
 
@@ -65,12 +103,45 @@ function extractProcessMessage(json: unknown, text: string): string {
   return GENERIC_PROCESS_ERROR;
 }
 
+function extractValidationMessage(json: unknown): string {
+  const body = asRecord(json);
+  return (
+    firstStringField(body, ['Error', 'error', 'message']) ??
+    DEFAULT_VALIDATION_MESSAGE
+  );
+}
+
+function classifyValidationError(json: unknown): ApiResult {
+  const body = asRecord(json);
+
+  return {
+    kind: 'validationError',
+    status: 422,
+    message: extractValidationMessage(json),
+    missingFields: normalizeFieldList(
+      firstArrayField(body, [
+        'Campos_miss',
+        'campos_faltantes',
+        'CamposFaltantes',
+        'missingFields',
+      ]),
+    ),
+    invalidFields: normalizeFieldList(
+      firstArrayField(body, [
+        'campos_incorrectos',
+        'campos_invalidos',
+        'CamposInvalidos',
+        'invalidFields',
+      ]),
+    ),
+  };
+}
+
 function isProcessErrorBody(json: unknown): boolean {
-  if (typeof json !== 'object' || json === null) {
+  const body = asRecord(json);
+  if (!body) {
     return false;
   }
-
-  const body = json as Record<string, unknown>;
 
   if (body.success === false) {
     return true;
@@ -101,7 +172,11 @@ function classifyHttpResponse(
     return { kind: 'technicalError' };
   }
 
-  if (status === 400 || status === 409 || status === 422) {
+  if (status === 422) {
+    return classifyValidationError(json);
+  }
+
+  if (status === 400 || status === 409) {
     return {
       kind: 'processError',
       message: extractProcessMessage(json, text),

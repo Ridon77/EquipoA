@@ -13,6 +13,7 @@ import {
 } from '../services/countriesService';
 import { loadConfig } from '../services/configService';
 import { submitForm } from '../services/submitService';
+import { mapValidationToFormErrors } from '../utils/apiFieldMapping';
 import { buildPublicFormQrUrl } from '../utils/buildPublicFormUrl';
 import {
   applyQrFormConfig,
@@ -21,6 +22,7 @@ import {
 } from '../utils/qrAccess';
 import { emptyFormData } from '../types';
 import type { FormData, RequiredFieldsConfig, ViewState } from '../types';
+import type { ApiValidationSummary } from '../components/FormView';
 import {
   hasFormErrors,
   trimFormData,
@@ -37,6 +39,9 @@ export function HomePage() {
   const [formData, setFormData] = useState<FormData>(emptyFormData());
   const [errors, setErrors] = useState<FormErrors>({});
   const [processError, setProcessError] = useState<string | undefined>();
+  const [validationError, setValidationError] = useState<
+    ApiValidationSummary | undefined
+  >();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requiredFields, setRequiredFields] = useState<RequiredFieldsConfig>(
     () => loadConfig().requiredFields,
@@ -118,6 +123,7 @@ export function HomePage() {
 
     setIsSubmitting(true);
     setProcessError(undefined);
+    setValidationError(undefined);
 
     try {
       const result = await submitForm(data);
@@ -125,14 +131,30 @@ export function HomePage() {
       switch (result.kind) {
         case 'success':
           setProcessError(undefined);
+          setValidationError(undefined);
           setErrors({});
           setViewState('success');
           break;
         case 'processError':
+          setValidationError(undefined);
           setProcessError(result.message);
+          break;
+        case 'validationError':
+          setProcessError(undefined);
+          setValidationError({
+            missingFields: result.missingFields,
+            invalidFields: result.invalidFields,
+          });
+          setErrors(
+            mapValidationToFormErrors(
+              result.missingFields,
+              result.invalidFields,
+            ),
+          );
           break;
         case 'technicalError':
           setProcessError(undefined);
+          setValidationError(undefined);
           setViewState('technicalError');
           break;
       }
@@ -157,6 +179,8 @@ export function HomePage() {
 
     setFormData(trimmed);
     setRequiredFields(currentRequiredFields);
+    setValidationError(undefined);
+    setProcessError(undefined);
 
     if (hasFormErrors(validationErrors)) {
       setErrors(validationErrors);
@@ -171,6 +195,7 @@ export function HomePage() {
     setFormData(emptyFormData());
     setErrors({});
     setProcessError(undefined);
+    setValidationError(undefined);
     setViewState('form');
   };
 
@@ -233,6 +258,7 @@ export function HomePage() {
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           processError={processError}
+          validationError={validationError}
         />
       </section>
 
